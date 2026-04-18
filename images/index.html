@@ -1,0 +1,4822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>诡味</title>
+<link rel="preload" href="images/back1.webp" as="image">
+<link rel="preload" href="images/back2.webp" as="image">
+<link rel="preload" href="images/it smell you.webp" as="image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== VARIABLES ===== */
+:root {
+  --black: #000000;
+  --near-black: #070707;
+  --dark: #0f0f0f;
+  --dark-green: #060e06;
+  --mid-green: #0d1a0d;
+  --gray-dark: #1e1e1e;
+  --gray-mid: #4a4a4a;
+  --gray-light: #a8a8a8;
+  --gray-off: #c8c8c8;
+  --white: #f0ede8;
+  --red-dark: #4a0000;
+  --red-mid: #7a0000;
+  --red-bright: #bb2200;
+  --red-pulse: rgba(180,0,0,0.6);
+  --amber: #6b5010;
+  --amber-light: #a8820a;
+  --paper-tan: #b8aa8a;
+  --cold-blue: #0a0f14;
+  --font: 'Noto Serif SC', 'STSong', 'SimSun', serif;
+  --font-mono: 'Courier New', monospace;
+}
+
+/* ===== RESET ===== */
+*, *::before, *::after {
+  margin: 0; padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: var(--font);
+  touch-action: none;
+}
+/* Allow scroll in notebook */
+#notebook-body {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ===== GAME CONTAINER ===== */
+#game {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  background: var(--near-black);
+}
+
+/* ===== SCENE BACKGROUND ===== */
+#scene-bg {
+  position: absolute;
+  inset: 0;
+  transition: background-image 0.6s ease, filter 0.6s ease;
+  z-index: 0;
+}
+
+/* 关键剧情镜头：contain 主图 + 模糊铺底（由 JS 切换显示） */
+.bg-img.bg-lens-underlay {
+  background-color: #050403 !important;
+  background-image: none !important;
+  filter: none !important;
+}
+#scene-lens.scene-lens {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: max(4px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  pointer-events: none;
+}
+#scene-lens.scene-lens.scene-lens--on {
+  display: flex;
+}
+#scene-lens .scene-lens-blur {
+  position: absolute;
+  inset: -12%;
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: blur(40px) brightness(0.24) saturate(0.68);
+  transform: scale(1.08);
+  z-index: 0;
+}
+#scene-lens .scene-lens-vig {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(ellipse 82% 78% at 50% 48%, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.58) 100%);
+  pointer-events: none;
+}
+#scene-lens .scene-lens-frame {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: max(6px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+    max(14px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+}
+#scene-lens .scene-lens-img {
+  max-width: min(98vw, 100%);
+  max-height: min(94dvh, 960px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: center center;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 10px 42px rgba(0,0,0,0.82));
+}
+
+/* Forest */
+.bg-forest {
+  background: radial-gradient(ellipse 80% 50% at 50% 100%, #0a140a 0%, #030803 60%, #000 100%);
+  filter: grayscale(0.85) contrast(1.4) brightness(0.7);
+}
+.bg-forest::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='700' viewBox='0 0 1200 700'%3E%3Crect width='1200' height='700' fill='%23000'/%3E%3Cg fill='%23010e01' opacity='0.98'%3E%3Cpolygon points='0,700 0,380 40,320 80,260 110,290 140,210 170,160 200,200 230,130 250,160 270,100 295,140 315,80 340,120 360,60 385,100 400,40 425,80 445,20 470,65 490,15 515,55 535,5 558,45 575,0 600,40 618,0 640,35 660,75 680,15 700,55 720,10 745,50 765,5 790,45 810,85 835,25 860,65 880,105 900,50 920,90 940,130 960,70 985,110 1010,150 1030,95 1055,135 1075,175 1095,140 1120,190 1145,245 1170,210 1200,280 1200,700'/%3E%3C/g%3E%3Cg fill='%23000a00' opacity='0.7'%3E%3Cpolygon points='0,700 0,460 50,410 90,360 120,380 150,310 190,270 215,295 240,240 265,260 295,200 325,225 355,170 385,195 410,145 440,165 465,110 495,130 520,80 548,100 570,55 595,75 620,30 645,55 670,85 695,40 720,65 748,95 775,45 800,75 825,105 852,55 880,88 908,125 935,75 962,112 992,155 1018,105 1045,148 1072,190 1100,155 1128,205 1160,265 1200,320 1200,700'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: bottom center;
+}
+.bg-forest::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 70% at 50% 40%, transparent 30%, rgba(0,0,0,0.85) 100%);
+}
+
+/* Bathroom */
+.bg-bathroom {
+  background: linear-gradient(to bottom, #0f1418 0%, #111820 60%, #0a1015 100%);
+}
+.bg-bathroom::before {
+  content: '';
+  position: absolute;
+  top: 8%; left: 50%;
+  transform: translateX(-50%);
+  width: min(55vw, 340px);
+  height: min(65vh, 480px);
+  border: 3px solid #2a3040;
+  box-shadow: 0 0 0 8px #151c24, 0 0 0 10px #1e2530, inset 0 0 60px rgba(0,20,40,0.8);
+  background: linear-gradient(150deg, #1a2030 0%, #0f151e 50%, #1a2232 100%);
+  border-radius: 2px;
+}
+
+/* Parking lot */
+.bg-parking {
+  background: #0a0a0c;
+  background-image:
+    linear-gradient(rgba(40,40,50,0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(40,40,50,0.3) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+.bg-parking::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 30% 60% at 20% 30%, rgba(220,200,120,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 25% 50% at 80% 20%, rgba(200,180,100,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 40% at 50% 100%, rgba(0,0,0,0.95) 0%, transparent 100%);
+}
+
+/* Taxi interior */
+.bg-taxi {
+  background: linear-gradient(to bottom, #0e0a04 0%, #18110a 40%, #100c06 100%);
+}
+.bg-taxi::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(120,90,40,0.04) 3px, rgba(120,90,40,0.04) 4px);
+  opacity: 0.5;
+}
+
+/* Cabin exterior */
+.bg-cabin-ext {
+  background: radial-gradient(ellipse 90% 60% at 50% 100%, #0a0d08 0%, #040603 70%, #000 100%);
+}
+.bg-cabin-ext::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='700'%3E%3Crect width='1200' height='700' fill='%23010501'/%3E%3Cg fill='%23000800'%3E%3Cpolygon points='0,700 0,420 80,360 160,310 220,340 280,280 340,240 400,270 460,200 520,230 560,180 600,210 640,160 700,190 760,220 820,170 880,200 940,240 1000,180 1060,220 1120,260 1160,240 1200,290 1200,700'/%3E%3C/g%3E%3Crect x='480' y='280' width='240' height='280' rx='4' fill='%23090d07'/%3E%3Crect x='490' y='285' width='220' height='5' fill='%23121a0e'/%3E%3Crect x='510' y='290' width='80' height='130' rx='2' fill='%23060a05' stroke='%231a2214' stroke-width='2'/%3E%3Crect x='610' y='290' width='80' height='130' rx='2' fill='%23060a05' stroke='%231a2214' stroke-width='2'/%3E%3Crect x='540' y='420' width='120' height='140' rx='2' fill='%23070b06' stroke='%231a2214' stroke-width='2'/%3E%3Ccircle cx='595' cy='490' r='5' fill='%231a2214'/%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: center bottom;
+}
+
+/* Cabin interior */
+.bg-cabin-int {
+  background: linear-gradient(to bottom, #100c08 0%, #180f0a 50%, #100a06 100%);
+}
+.bg-cabin-int::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(60,35,15,0.08) 40px, rgba(60,35,15,0.08) 42px),
+    repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(60,35,15,0.06) 60px, rgba(60,35,15,0.06) 62px);
+}
+
+/* Deep forest */
+.bg-deep-forest {
+  background: radial-gradient(ellipse at 50% 50%, #050a05 0%, #020502 100%);
+  filter: grayscale(0.6) brightness(0.5);
+}
+
+/* ===== VIGNETTE ===== */
+#vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background: radial-gradient(ellipse 70% 70% at 50% 50%, transparent 40%, rgba(0,0,0,0.8) 100%);
+  transition: opacity 0.5s;
+}
+
+/* ===== SAN PRESSURE OVERLAY ===== */
+/* ===== SCENE CONTENT ===== */
+#scene-content {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== DIALOGUE BOX ===== */
+#dialogue-box {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  z-index: 50;
+  padding: 22px clamp(16px,6vw,48px) 32px;
+  background: linear-gradient(
+    to top,
+    rgba(2,1,1,0.97) 0%,
+    rgba(5,3,3,0.93) 60%,
+    rgba(8,5,4,0.72) 100%
+  );
+  border-top: 1px solid rgba(100,72,48,0.18);
+  box-shadow: inset 0 1px 0 rgba(160,110,60,0.06);
+  display: none;
+  min-height: 140px;
+}
+#speaker-name {
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: rgba(185,145,80,0.85);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  border-left: 2px solid rgba(160,95,45,0.55);
+  padding-left: 10px;
+}
+#dialogue-text {
+  font-size: clamp(14px, 3.5vw, 17px);
+  line-height: 1.95;
+  color: rgba(210,205,198,0.92);
+  min-height: 60px;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+}
+#dialogue-continue {
+  position: absolute;
+  bottom: 14px;
+  right: 22px;
+  font-size: 10px;
+  color: rgba(140,120,90,0.6);
+  letter-spacing: 2px;
+  animation: blink 1.4s ease-in-out infinite;
+  display: none;
+}
+@keyframes blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* ===== NARRATION TEXT (center) ===== */
+#narration {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 40;
+  text-align: center;
+  color: var(--gray-off);
+  font-size: clamp(14px, 3.5vw, 18px);
+  line-height: 2;
+  max-width: 80%;
+  pointer-events: none;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.9);
+  display: none;
+}
+
+/* ===== CHOICES ===== */
+#choice-panel {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  width: min(90vw, 500px);
+}
+.choice-btn {
+  padding: 15px 24px;
+  background: rgba(8,5,3,0.9);
+  border: 1px solid rgba(90,65,40,0.28);
+  border-left: 3px solid rgba(120,75,38,0.5);
+  color: rgba(198,192,182,0.88);
+  font-family: var(--font);
+  font-size: clamp(13px, 3vw, 15px);
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+  border-radius: 1px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+.choice-btn::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0;
+  background: rgba(140,80,35,0.15);
+  transition: width 0.2s;
+}
+.choice-btn:hover::before, .choice-btn:active::before { width: 100%; }
+.choice-btn:hover, .choice-btn:active {
+  background: rgba(20,12,6,0.96);
+  border-left-color: rgba(170,95,42,0.85);
+  border-color: rgba(110,72,38,0.5);
+  color: rgba(228,218,200,0.96);
+  box-shadow: inset 0 0 20px rgba(140,75,30,0.08);
+}
+
+/* ===== HUD ===== */
+#hud {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+#notebook-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--gray-mid);
+  font-size: 14px;
+  padding: 6px 12px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.2s;
+  border-radius: 2px;
+}
+#notebook-btn:hover { border-color: var(--amber); color: var(--amber-light); }
+#notebook-btn.glow {
+  border-color: var(--amber);
+  color: var(--amber-light);
+  animation: notebookGlow 2s infinite;
+}
+@keyframes notebookGlow {
+  0%, 100% { box-shadow: 0 0 6px rgba(168,130,10,0.3); }
+  50% { box-shadow: 0 0 14px rgba(168,130,10,0.7); }
+}
+
+/* ===== SMELL BUTTON ===== */
+#smell-btn {
+  position: absolute;
+  bottom: 170px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 1px solid rgba(130,95,55,0.3);
+  box-shadow: 0 0 0 3px rgba(90,60,30,0.12), inset 0 0 16px rgba(0,0,0,0.6);
+  background: radial-gradient(circle at 42% 38%, rgba(22,16,10,0.97), rgba(8,5,3,0.98));
+  color: rgba(190,175,148,0.82);
+  font-family: var(--font);
+  font-size: 17px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s;
+  letter-spacing: 1px;
+}
+#smell-btn.active {
+  border-color: rgba(180,120,55,0.55);
+  box-shadow: 0 0 0 5px rgba(130,80,30,0.18), 0 0 20px rgba(150,90,35,0.3), inset 0 0 20px rgba(0,0,0,0.7);
+  background: radial-gradient(circle at 42% 38%, rgba(38,26,12,0.98), rgba(14,9,4,0.99));
+  color: rgba(215,185,130,0.92);
+  transform: translateX(-50%) scale(0.93);
+}
+#smell-btn:hover {
+  border-color: rgba(155,108,50,0.48);
+  box-shadow: 0 0 0 4px rgba(110,70,25,0.15), inset 0 0 16px rgba(0,0,0,0.65);
+  color: rgba(205,182,145,0.9);
+}
+
+/* ===== SMELL FEEDBACK ===== */
+#smell-feedback {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 65;
+  text-align: center;
+  pointer-events: none;
+  display: none;
+}
+.smell-line {
+  font-size: clamp(13px, 3vw, 16px);
+  color: var(--gray-light);
+  letter-spacing: 2px;
+  line-height: 2.5;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.6s, transform 0.6s;
+}
+.smell-line.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.smell-line.anomaly { color: #c8a060; }
+.smell-line.danger { color: #cc6040; }
+
+/* ===== QTE OVERLAY ===== */
+#qte-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(3px);
+}
+/* 危险警告闪红光边框 */
+#qte-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(180,35,20,0);
+  pointer-events: none;
+  animation: qteRedBorder 0.6s ease-in-out infinite alternate;
+}
+@keyframes qteRedBorder {
+  from { border-color: rgba(180,35,20,0); box-shadow: inset 0 0 0 rgba(180,35,20,0); }
+  to   { border-color: rgba(180,35,20,0.35); box-shadow: inset 0 0 40px rgba(160,30,15,0.2); }
+}
+#qte-prompt {
+  font-size: clamp(20px, 6vw, 32px);
+  color: var(--white);
+  letter-spacing: 4px;
+  margin-bottom: 30px;
+  text-shadow: 0 0 20px rgba(255,100,50,0.5);
+  animation: qtePulse 0.5s infinite;
+}
+@keyframes qtePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.qte-actions {
+  display: flex;
+  gap: 16px;
+}
+.qte-action-btn {
+  padding: 18px 32px;
+  background: rgba(12,7,3,0.96);
+  border: 1px solid rgba(180,110,40,0.45);
+  border-bottom: 2px solid rgba(200,120,40,0.6);
+  color: rgba(210,170,90,0.9);
+  font-family: var(--font);
+  font-size: clamp(14px, 3.5vw, 18px);
+  cursor: pointer;
+  letter-spacing: 3px;
+  border-radius: 1px;
+  transition: all 0.12s;
+  text-shadow: 0 0 12px rgba(200,130,50,0.4);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.6);
+}
+.qte-action-btn:active, .qte-action-btn:hover {
+  background: rgba(35,20,6,0.98);
+  border-color: rgba(220,150,55,0.75);
+  border-bottom-color: rgba(230,160,60,0.9);
+  color: rgba(240,200,100,0.96);
+  transform: scale(0.97) translateY(1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.8), 0 0 18px rgba(200,130,50,0.2);
+}
+
+/* ===== ESCAPE MECHANIC (S01) — 左右脚交替逃生 ===== */
+#escape-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  --escape-foot-w: min(132px, 30vw);
+}
+#escape-ui::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 55% at 50% 55%, rgba(18,6,4,0.45) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+#escape-ui::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(ellipse 50% 40% at 50% 50%, rgba(90,25,12,0.22) 0%, transparent 70%);
+  transition: opacity 0.08s;
+}
+#escape-ui.escape-atmo-pulse::after {
+  opacity: 1;
+  animation: escapeAtmoPulse 0.28s ease-out;
+}
+@keyframes escapeAtmoPulse {
+  0% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+#escape-ui-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(14px, 3vw, 22px);
+  max-width: 100%;
+  will-change: transform;
+}
+#escape-ui-inner.shake-L { animation: escapeShakeL 0.14s ease-out; }
+#escape-ui-inner.shake-R { animation: escapeShakeR 0.14s ease-out; }
+@keyframes escapeShakeL {
+  0% { transform: translateX(0); }
+  35% { transform: translateX(-10px); }
+  100% { transform: translateX(0); }
+}
+@keyframes escapeShakeR {
+  0% { transform: translateX(0); }
+  35% { transform: translateX(10px); }
+  100% { transform: translateX(0); }
+}
+#escape-prompt {
+  font-size: clamp(36px, 10vw, 72px);
+  color: var(--white);
+  letter-spacing: 8px;
+  font-weight: 700;
+  text-shadow: 0 0 40px rgba(255,50,0,0.6);
+  animation: shakeTxt 0.4s infinite;
+}
+@keyframes shakeTxt {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px) rotate(-0.5deg); }
+  75% { transform: translateX(3px) rotate(0.5deg); }
+}
+#escape-bar-track {
+  width: min(70vw, 400px);
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: box-shadow 0.12s;
+}
+#escape-bar-track.bar-pulse {
+  box-shadow: 0 0 14px rgba(180,55,25,0.45);
+}
+#escape-bar-fill {
+  height: 100%;
+  background: linear-gradient(to right, #441100, #cc3300, #ff6600);
+  width: 0%;
+  transition: width 0.15s;
+  border-radius: 4px;
+}
+#escape-subhint {
+  font-size: clamp(11px, 2.8vw, 13px);
+  letter-spacing: 3px;
+  color: rgba(165,155,140,0.88);
+  font-weight: 400;
+}
+#escape-feet-stage {
+  position: relative;
+  width: min(92vw, 420px);
+  min-height: clamp(148px, 38vw, 210px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: clamp(6px, 1.8vh, 16px);
+}
+#escape-zone-left,
+#escape-zone-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+#escape-zone-left { left: 0; }
+#escape-zone-right { right: 0; }
+#escape-feet {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(8px, 3vw, 28px);
+  pointer-events: none;
+}
+#escape-feet .escape-foot {
+  pointer-events: auto;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  width: var(--escape-foot-w);
+  height: calc(var(--escape-foot-w) * 1.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, filter 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+#escape-foot-left { transform: rotate(-6deg); }
+#escape-foot-right { transform: rotate(6deg); }
+.escape-foot .escape-foot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 4px 14px rgba(0,0,0,0.88));
+  transition: filter 0.12s ease;
+}
+.escape-foot.is-lit .escape-foot-img {
+  filter:
+    brightness(1.12)
+    contrast(1.08)
+    drop-shadow(0 0 18px rgba(170,58,32,0.5))
+    drop-shadow(0 4px 14px rgba(0,0,0,0.82));
+}
+.escape-foot.press-in {
+  transform: scale(0.94) translateY(4px) !important;
+}
+#escape-foot-left.press-in { transform: rotate(-6deg) scale(0.94) translateY(4px) !important; }
+#escape-foot-right.press-in { transform: rotate(6deg) scale(0.94) translateY(4px) !important; }
+#escape-hint {
+  font-size: clamp(10px, 2.8vw, 12px);
+  color: var(--gray-mid);
+  letter-spacing: 2px;
+  text-align: center;
+  line-height: 1.6;
+  max-width: 90vw;
+}
+/* 标题前快跑：与正式版 UI 完全一致，仅提高层级以压在标题层之上 */
+#escape-ui.escape-ui--pretitle {
+  z-index: 220;
+}
+/* 横屏 / 矮屏：避免鞋印与提示挤出可视区 */
+@media (max-height: 520px) and (orientation: landscape) {
+  #escape-ui {
+    padding: 4px 10px;
+    --escape-foot-w: min(96px, 18vw);
+  }
+  #escape-prompt {
+    font-size: clamp(22px, 7vw, 40px);
+    letter-spacing: 4px;
+  }
+  #escape-feet-stage {
+    min-height: clamp(88px, 26vh, 140px);
+  }
+  #escape-subhint {
+    font-size: clamp(9px, 2.2vw, 11px);
+    letter-spacing: 2px;
+  }
+  #escape-hint {
+    font-size: clamp(9px, 2vw, 11px);
+    line-height: 1.45;
+  }
+  #escape-ui-inner {
+    gap: clamp(6px, 1.5vh, 12px);
+  }
+}
+
+/* ===== BREATHING MECHANIC ===== */
+#breath-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 95;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+#breath-ui::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  filter: brightness(0.55) saturate(0.45);
+  pointer-events: none;
+  z-index: 0;
+}
+#breath-ui > * {
+  position: relative;
+  z-index: 1;
+}
+#breath-ring {
+  width: min(160px, 40vw);
+  height: min(160px, 40vw);
+  border-radius: 50%;
+  border: 2px solid rgba(180,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+#breath-ring::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1px solid rgba(180,0,0,0.15);
+  animation: breathRing 2s infinite;
+}
+@keyframes breathRing {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+#breath-center {
+  width: min(80px, 22vw);
+  height: min(80px, 22vw);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(100,0,0,0.5) 0%, rgba(40,0,0,0.2) 100%);
+  border: 1px solid rgba(180,0,0,0.3);
+  transition: all 0.3s;
+}
+#breath-center.stable {
+  background: radial-gradient(circle, rgba(0,80,0,0.4) 0%, rgba(0,30,0,0.15) 100%);
+  border-color: rgba(0,150,0,0.3);
+}
+#breath-prompt {
+  font-size: clamp(13px, 3.5vw, 16px);
+  color: var(--gray-light);
+  letter-spacing: 3px;
+  text-align: center;
+}
+#breath-hold-btn {
+  padding: 20px 40px;
+  background: rgba(5,0,0,0.9);
+  border: 1px solid rgba(180,0,0,0.3);
+  color: rgba(200,150,150,0.8);
+  font-family: var(--font);
+  font-size: clamp(14px, 3.5vw, 17px);
+  cursor: pointer;
+  letter-spacing: 2px;
+  border-radius: 2px;
+  -webkit-touch-callout: none;
+}
+#breath-hold-btn.held {
+  border-color: rgba(180,0,0,0.6);
+  background: rgba(15,2,2,0.95);
+}
+#breath-meter-bar {
+  width: min(200px, 55vw);
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+#breath-meter-fill {
+  height: 100%;
+  background: linear-gradient(to right, var(--red-mid), #aa2200);
+  width: 100%;
+  transition: width 0.3s;
+  border-radius: 2px;
+}
+/* ===== NOTEBOOK ===== */
+#notebook-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(4,3,2,0.97);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+#notebook-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#notebook-title {
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: var(--amber-light);
+}
+#notebook-close {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--gray-mid);
+  font-size: 12px;
+  padding: 6px 14px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  border-radius: 2px;
+  font-family: var(--font);
+}
+#notebook-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  -webkit-overflow-scrolling: touch;
+}
+.notebook-rule {
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-left: 2px solid var(--amber);
+  background: rgba(120,90,20,0.06);
+}
+.notebook-rule-title {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--amber-light);
+  margin-bottom: 6px;
+}
+.notebook-rule-text {
+  font-size: clamp(13px, 3vw, 15px);
+  color: var(--gray-light);
+  line-height: 1.8;
+}
+.notebook-observation {
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-left: 2px solid rgba(180,60,60,0.6);
+  background: rgba(100,20,20,0.06);
+}
+.notebook-observation-title {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: rgba(200,100,100,0.8);
+  margin-bottom: 6px;
+}
+.notebook-observation-text {
+  font-size: clamp(13px, 3vw, 15px);
+  color: var(--gray-light);
+  line-height: 1.8;
+}
+
+/* ===== TITLE：开场镜头（显影→闪现→淡出） + 纯黑标题页 ===== */
+#title-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  transition: opacity 0.55s ease;
+  opacity: 1;
+  overflow: hidden;
+}
+#opening-sequence {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  pointer-events: none;
+}
+#opening-stack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#opening-blur {
+  position: absolute;
+  inset: -18%;
+  z-index: 0;
+  background: url('images/back1.webp') center 42% / cover no-repeat;
+  filter: blur(48px) brightness(0.12) saturate(0.62);
+  transform: scale(0.94);
+  opacity: 0;
+  transform-origin: center 40%;
+}
+#opening-shot {
+  position: relative;
+  z-index: 2;
+  max-width: min(96vw, 560px);
+  max-height: min(78dvh, 720px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: center 30%;
+  opacity: 0;
+  transform-origin: center 28%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.opening--develop #opening-blur {
+  animation: openingBlurCreep 5.2s cubic-bezier(0.22, 0.48, 0.18, 1) forwards;
+}
+.opening--develop #opening-shot {
+  animation: openingDevelop 5.2s cubic-bezier(0.22, 0.48, 0.18, 1) forwards;
+}
+@keyframes openingDevelop {
+  0% {
+    opacity: 0;
+    filter: blur(16px) brightness(0.28) contrast(0.88) saturate(0.75);
+    transform: scale(0.91) translateY(2%);
+  }
+  45% {
+    opacity: 0.78;
+    filter: blur(6px) brightness(0.62) contrast(0.95) saturate(0.9);
+    transform: scale(1.02) translateY(0.5%);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0) brightness(1) contrast(1.06) saturate(1.02);
+    transform: scale(1.07) translateY(1%);
+  }
+}
+@keyframes openingBlurCreep {
+  0% {
+    opacity: 0;
+    filter: blur(52px) brightness(0.1) saturate(0.55);
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 0.88;
+    filter: blur(38px) brightness(0.22) saturate(0.66);
+    transform: scale(1.1);
+  }
+}
+.opening--rattle #opening-stack {
+  animation: openingStackRattle 0.34s linear;
+}
+@keyframes openingStackRattle {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  12%  { transform: translate(-8px, 4px) rotate(-0.8deg); }
+  24%  { transform: translate(7px, -5px) rotate(0.7deg); }
+  36%  { transform: translate(-6px, -3px) rotate(-0.6deg); }
+  48%  { transform: translate(8px, 5px) rotate(0.8deg); }
+  60%  { transform: translate(-5px, 2px) rotate(-0.5deg); }
+  72%  { transform: translate(6px, -4px) rotate(0.55deg); }
+  84%  { transform: translate(-3px, 2px) rotate(-0.3deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+.opening--shock #opening-shot {
+  opacity: 1;
+  animation: openingFaceLunge 0.42s cubic-bezier(0.2, 0.05, 0.15, 1) forwards !important;
+}
+@keyframes openingFaceLunge {
+  0% {
+    opacity: 1;
+    filter: brightness(1) contrast(1.06) saturate(1.02);
+    transform: scale(1.07) translateY(1%);
+  }
+  28% {
+    opacity: 1;
+    filter: brightness(1.14) contrast(1.55) saturate(1.18);
+    transform: scale(1.25) translateY(2%);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(0.8) contrast(1.28) saturate(1.08);
+    transform: scale(1.2) translateY(3%);
+  }
+}
+#title-screen.title-screen--under-pretitle {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.opening--exit #opening-stack {
+  animation: openingFadeOut 0.65s ease forwards;
+}
+@keyframes openingFadeOut {
+  to { opacity: 0; }
+}
+#title-brand {
+  position: relative;
+  z-index: 4;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  width: 100%;
+  min-height: 100%;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(72px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  pointer-events: none;
+  background: #000;
+}
+#title-brand.title-brand--visible {
+  display: flex;
+}
+#title-brand #start-btn {
+  pointer-events: auto;
+}
+@keyframes titleReveal {
+  from { opacity: 0; transform: translateY(8px); filter: blur(7px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+#title-char {
+  font-size: clamp(52px, 13vw, 100px);
+  color: rgba(214, 208, 198, 0.9);
+  font-weight: 300;
+  letter-spacing: 12px;
+  line-height: 1.12;
+  opacity: 0;
+  text-shadow: none;
+}
+#title-brand.title-brand--visible #title-char {
+  animation: titleReveal 1.4s cubic-bezier(0.25, 0.82, 0.28, 1) 0.4s forwards;
+}
+#title-subtitle {
+  font-size: clamp(10px, 2.2vw, 12px);
+  letter-spacing: 8px;
+  color: var(--gray-dark);
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+#title-divider {
+  width: 28px;
+  height: 1px;
+  background: rgba(255,255,255,0.12);
+  margin: 4px 0 0;
+  opacity: 0;
+}
+#title-brand.title-brand--visible #title-divider {
+  animation: titleReveal 1.15s ease 1s forwards;
+}
+#start-btn {
+  margin-top: 8px;
+  opacity: 0;
+  padding: 14px 48px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(178, 172, 162, 0.92);
+  font-family: var(--font);
+  font-size: clamp(12px, 2.8vw, 14px);
+  letter-spacing: 6px;
+  cursor: pointer;
+  transition: border-color 0.35s ease, color 0.35s ease, background 0.35s ease;
+  border-radius: 1px;
+  box-shadow: none;
+}
+#title-brand.title-brand--visible #start-btn {
+  animation: titleReveal 1.15s ease 1.45s forwards;
+}
+#start-btn:hover, #start-btn:active {
+  border-color: rgba(255,255,255,0.32);
+  color: rgba(210, 204, 194, 0.95);
+  background: rgba(255,255,255,0.02);
+}
+#title-warning {
+  position: absolute;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 5;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(90, 86, 78, 0.85);
+  text-align: center;
+  padding: 0 20px;
+  opacity: 0;
+}
+#title-screen.title-phase-brand #title-warning {
+  animation: titleReveal 1s ease 2.35s forwards;
+}
+
+/* ===== FAILURE SCREEN ===== */
+#fail-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.96);
+  gap: 20px;
+  padding: 40px;
+}
+#fail-title {
+  font-size: clamp(11px, 2.5vw, 13px);
+  letter-spacing: 6px;
+  color: var(--red-mid);
+  margin-bottom: 8px;
+}
+#fail-text {
+  font-size: clamp(15px, 4vw, 20px);
+  color: var(--gray-off);
+  text-align: center;
+  line-height: 2;
+  max-width: 600px;
+}
+#fail-sub {
+  font-size: clamp(12px, 3vw, 14px);
+  color: var(--gray-mid);
+  text-align: center;
+  line-height: 2;
+  max-width: 500px;
+  margin-top: -8px;
+}
+#fail-retry-btn {
+  margin-top: 16px;
+  padding: 14px 36px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--gray-light);
+  font-family: var(--font);
+  font-size: 13px;
+  letter-spacing: 4px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+#fail-retry-btn:hover { border-color: rgba(255,255,255,0.3); color: var(--white); }
+
+/* ===== END SCREEN ===== */
+#end-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.98);
+  gap: 16px;
+  padding: 40px;
+}
+#end-title {
+  font-size: clamp(11px, 2.5vw, 13px);
+  letter-spacing: 6px;
+  color: var(--amber-light);
+  margin-bottom: 8px;
+}
+#end-text {
+  font-size: clamp(15px, 4vw, 20px);
+  color: var(--gray-off);
+  text-align: center;
+  line-height: 2.2;
+  max-width: 600px;
+}
+#end-stats {
+  margin-top: 8px;
+  padding: 20px 30px;
+  border: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 240px;
+}
+.end-stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--gray-mid);
+}
+.end-stat span:last-child { color: var(--gray-light); }
+#end-continue {
+  margin-top: 12px;
+  font-size: clamp(20px, 5vw, 28px);
+  letter-spacing: 6px;
+  color: var(--gray-dark);
+}
+
+/* ===== 手机规则弹出层（非来电、无接听）===== */
+#rules-mobile-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 130;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(3, 2, 2, 0.72);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+#rules-mobile-overlay.rms-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+#rules-mobile-shell {
+  width: 100%;
+  max-width: 380px;
+  max-height: min(88dvh, 720px);
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(165deg, rgba(18,14,12,0.98) 0%, rgba(8,6,5,0.99) 100%);
+  border: 1px solid rgba(88,62,42,0.35);
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.5),
+    0 32px 80px rgba(0,0,0,0.85),
+    inset 0 1px 0 rgba(120,90,60,0.12);
+  overflow: hidden;
+  transform: translateY(12px) scale(0.98);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+  opacity: 0.92;
+}
+#rules-mobile-overlay.rms-visible #rules-mobile-shell {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+#rules-mobile-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px 10px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: rgba(150,142,128,0.75);
+  border-bottom: 1px solid rgba(60,48,38,0.35);
+}
+#rules-mobile-title {
+  padding: 18px 22px 8px;
+  font-size: clamp(12px, 3vw, 14px);
+  letter-spacing: 6px;
+  color: rgba(195,175,130,0.88);
+  text-align: center;
+}
+#rules-mobile-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 22px 20px;
+  font-size: clamp(14px, 3.6vw, 17px);
+  line-height: 2.05;
+  letter-spacing: 1px;
+  color: rgba(215,205,188,0.92);
+  text-align: left;
+  min-height: 120px;
+  white-space: pre-wrap;
+  -webkit-overflow-scrolling: touch;
+}
+#rules-mobile-confirm {
+  margin: 0 18px 18px;
+  padding: 12px 20px;
+  align-self: stretch;
+  font-family: var(--font);
+  font-size: clamp(12px, 3vw, 14px);
+  letter-spacing: 8px;
+  color: rgba(185,168,145,0.82);
+  background: rgba(22,16,12,0.35);
+  border: 1px solid rgba(90,62,42,0.28);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.12s, color 0.2s;
+  display: none;
+}
+#rules-mobile-confirm:hover {
+  background: rgba(55,32,18,0.75);
+  border-color: rgba(180,90,45,0.55);
+}
+#rules-mobile-confirm:active { transform: scale(0.98); }
+
+#rules-mobile-hint {
+  display: none;
+  margin: 0 18px 10px;
+  padding: 0 8px;
+  font-size: clamp(10px, 2.6vw, 11px);
+  letter-spacing: 3px;
+  color: rgba(130,118,102,0.55);
+  text-align: center;
+}
+#rules-mobile-overlay.rms-dismiss-tap {
+  cursor: pointer;
+}
+
+/* ===== 老板来电影情镜头（无接听交互，竖图完整显示）===== */
+#phone-shot-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 128;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: #050403;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+/* 宿醉层叠：保留底层镜头，仅压暗与聚光，非独立黑底插页 */
+#phone-shot-overlay.phone-shot-layered {
+  background: rgba(2, 1, 1, 0.25);
+}
+#phone-shot-overlay.phone-shot-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.phone-shot-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 72% 58% at 50% 42%, transparent 0%, rgba(0,0,0,0.62) 78%);
+  z-index: 2;
+  pointer-events: none;
+}
+#phone-shot-overlay.phone-shot-layered .phone-shot-vignette {
+  background: radial-gradient(ellipse 68% 55% at 50% 45%, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.72) 88%);
+}
+.phone-shot-blur {
+  position: absolute;
+  inset: -10%;
+  background: url('images/phone.webp') center / cover no-repeat;
+  filter: blur(40px) brightness(0.22) saturate(0.65);
+  transform: scale(1.1);
+  z-index: 0;
+}
+#phone-shot-overlay .phone-shot-frame {
+  position: relative;
+  z-index: 1;
+  width: min(420px, min(94vw, 100dvh * 0.48));
+  max-width: 100%;
+  max-height: min(92dvh, 880px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.phone-shot-img {
+  width: 100%;
+  height: auto;
+  max-height: min(92dvh, 880px);
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 18px 50px rgba(0,0,0,0.9));
+}
+@media (max-width: 600px) {
+  #phone-shot-overlay .phone-shot-frame {
+    width: min(100vw - 8px, 100dvh - 16px);
+    max-height: 100dvh;
+  }
+  .phone-shot-img {
+    max-height: min(100dvh - 16px, 900px);
+  }
+}
+
+/* ===== SCENE-SPECIFIC ELEMENTS ===== */
+/* Mirror face */
+#mirror-face {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: min(52vw, 320px);
+  height: min(60vh, 440px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+#mirror-face svg {
+  width: 80px;
+  height: 100px;
+  opacity: 0.35;
+  filter: blur(0.5px);
+}
+
+/* Passengers in taxi：透明热区，无轮廓/标签 */
+#taxi-passengers {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: none;
+}
+.passenger.passenger--ghost {
+  cursor: pointer;
+  border: 0;
+  background: transparent !important;
+  outline: none;
+  overflow: hidden;
+  text-indent: -9999px;
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  transition: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.passenger.passenger--ghost:hover,
+.passenger.passenger--ghost:active,
+.passenger.passenger--ghost:focus {
+  opacity: 1 !important;
+  background: transparent !important;
+  outline: none !important;
+  filter: none !important;
+}
+
+/* Cabin objects (clickable hotspots) */
+#cabin-hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: none;
+}
+.hotspot {
+  position: absolute;
+  cursor: pointer;
+}
+.hotspot.hotspot--ghost {
+  border: 0;
+  background: transparent !important;
+  outline: none;
+  box-shadow: none;
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden;
+  text-indent: -9999px;
+  pointer-events: auto;
+  transition: none;
+}
+.hotspot.hotspot--ghost::before,
+.hotspot.hotspot--ghost::after {
+  content: none !important;
+  display: none !important;
+}
+.hotspot.hotspot--ghost:hover,
+.hotspot.hotspot--ghost:active,
+.hotspot.hotspot--ghost:focus,
+.hotspot.hotspot--ghost:focus-visible {
+  border: 0 !important;
+  background: transparent !important;
+  color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* Ground investigation (S05) */
+#ground-probe {
+  position: absolute;
+  bottom: 160px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  display: none;
+  gap: 12px;
+  flex-direction: column;
+  align-items: center;
+}
+#ground-probe.ground-probe--smell-slot {
+  bottom: 170px;
+}
+.ground-action-btn {
+  padding: 13px 26px;
+  background: rgba(8,5,3,0.93);
+  border: 1px solid rgba(90,65,38,0.28);
+  border-left: 3px solid rgba(120,78,38,0.45);
+  color: rgba(190,182,168,0.85);
+  font-family: var(--font);
+  font-size: clamp(12px, 3vw, 14px);
+  cursor: pointer;
+  letter-spacing: 2px;
+  border-radius: 1px;
+  transition: all 0.18s;
+  text-align: left;
+}
+.ground-action-btn:hover, .ground-action-btn:active {
+  background: rgba(18,11,5,0.96);
+  border-left-color: rgba(165,95,40,0.8);
+  border-color: rgba(108,70,35,0.5);
+  color: rgba(225,210,180,0.95);
+}
+
+/* Path choice (S07) */
+#path-choice {
+  position: absolute;
+  bottom: 160px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  width: min(90vw, 480px);
+}
+.path-btn {
+  padding: 17px 24px;
+  background: rgba(8,5,3,0.93);
+  border: 1px solid rgba(90,65,38,0.28);
+  color: rgba(192,184,168,0.88);
+  font-family: var(--font);
+  font-size: clamp(13px, 3.5vw, 15px);
+  cursor: pointer;
+  letter-spacing: 2px;
+  border-radius: 1px;
+  transition: all 0.18s;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.path-btn.danger-path {
+  border-left: 3px solid rgba(160,38,22,0.5);
+  border-color: rgba(140,42,22,0.3);
+}
+.path-btn.safe-path {
+  border-left: 3px solid rgba(38,90,42,0.5);
+  border-color: rgba(42,85,42,0.3);
+}
+.path-btn:hover, .path-btn:active {
+  background: rgba(20,12,5,0.96);
+  color: rgba(228,215,188,0.96);
+}
+.path-btn.danger-path:hover { border-left-color: rgba(200,50,28,0.75); }
+.path-btn.safe-path:hover  { border-left-color: rgba(48,115,52,0.75); }
+
+/* ===== TRANSITION OVERLAY ===== */
+#transition {
+  position: absolute;
+  inset: 0;
+  z-index: 300;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s;
+}
+#transition.fade-in { opacity: 1; pointer-events: all; }
+
+/* ===== ANIMATIONS ===== */
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-4px, -2px); }
+  20% { transform: translate(4px, 2px); }
+  30% { transform: translate(-3px, 3px); }
+  40% { transform: translate(3px, -3px); }
+  50% { transform: translate(-2px, -4px); }
+  60% { transform: translate(2px, 4px); }
+  70% { transform: translate(-4px, 2px); }
+  80% { transform: translate(4px, -2px); }
+  90% { transform: translate(-2px, 2px); }
+}
+.shake { animation: screenShake 0.5s ease; }
+
+@keyframes pulseRed {
+  0%, 100% { box-shadow: inset 0 0 60px rgba(140,0,0,0); }
+  50% { box-shadow: inset 0 0 120px rgba(140,0,0,0.5); }
+}
+.danger-pulse { animation: pulseRed 1s infinite; }
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); filter: none; }
+  20% { transform: translate(-2px, 0); filter: hue-rotate(90deg); }
+  40% { transform: translate(2px, 1px); }
+  60% { transform: translate(-1px, -1px); filter: hue-rotate(-90deg); }
+  80% { transform: translate(1px, 0); }
+}
+.glitch { animation: glitch 0.3s; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeIn 0.6s ease forwards; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  #smell-btn { bottom: 190px; width: 64px; height: 64px; font-size: 16px; }
+  #ground-probe.ground-probe--smell-slot { bottom: 190px; }
+  .qte-actions { flex-direction: column; }
+  .qte-action-btn { padding: 16px 20px; }
+  #dialogue-box { padding: 16px 16px 24px; min-height: 130px; }
+  #dialogue-text { font-size: 14px; }
+  #hud { top: 10px; right: 10px; }
+  #notebook-btn { font-size: 12px; padding: 5px 10px; }
+  .choice-btn { padding: 14px 16px; font-size: 13px; }
+  #breath-hold-btn { padding: 18px 32px; font-size: 14px; }
+}
+@media (min-width: 768px) {
+  #smell-btn { bottom: 210px; }
+  #ground-probe.ground-probe--smell-slot { bottom: 210px; }
+  #dialogue-box { padding: 24px 10% 36px; }
+  .choice-btn { padding: 18px 32px; }
+  #choice-panel { bottom: 30px; }
+}
+@media (min-width: 1200px) {
+  #dialogue-box { padding: 28px 15% 42px; }
+  #dialogue-text { font-size: 17px; line-height: 2; }
+}
+@media (hover: none) and (pointer: coarse) {
+  .choice-btn, .qte-action-btn, .ground-action-btn, .path-btn {
+    min-height: 52px;
+  }
+  /* Larger smell button on touch devices */
+  #smell-btn { width: 80px; height: 80px; font-size: 20px; }
+}
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  #dialogue-box { min-height: 100px; padding: 12px 12% 16px; }
+  #smell-btn { bottom: 115px; }
+  #choice-panel { bottom: 10px; }
+  #path-choice { bottom: 10px; }
+  #ground-probe { bottom: 110px; }
+  #ground-probe.ground-probe--smell-slot { bottom: 115px; }
+  #escape-prompt { font-size: 28px; }
+}
+
+/* ===== ATMOSPHERIC OVERLAY ===== */
+#atmo-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s;
+}
+/* Fog particles */
+.fog-layer {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(ellipse 60% 40% at 30% 60%, rgba(255,255,255,0.015) 0%, transparent 70%),
+              radial-gradient(ellipse 40% 30% at 70% 40%, rgba(255,255,255,0.01) 0%, transparent 60%);
+  animation: fogDrift 12s ease-in-out infinite alternate;
+}
+@keyframes fogDrift {
+  0% { transform: translateX(0) translateY(0); opacity: 0.4; }
+  50% { transform: translateX(3%) translateY(-2%); opacity: 0.7; }
+  100% { transform: translateX(-2%) translateY(3%); opacity: 0.3; }
+}
+/* BW filter for S01 */
+.filter-bw {
+  filter: grayscale(1) contrast(1.3) brightness(0.65) !important;
+}
+/* Cold bathroom light */
+.filter-cold {
+  filter: saturate(0.3) hue-rotate(180deg) brightness(0.8) !important;
+}
+
+/* ===== SCENE SUBTITLE（已废弃，保留空节点防布局报错）===== */
+#scene-subtitle {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* ===== FLICKER EFFECTS ===== */
+@keyframes flickerIn {
+  0% { opacity: 0; }
+  10% { opacity: 0.8; }
+  15% { opacity: 0.2; }
+  20% { opacity: 0.9; }
+  100% { opacity: 1; }
+}
+.flicker-in { animation: flickerIn 0.4s ease forwards; }
+
+/* ===== SCROLL BAR ===== */
+#notebook-body::-webkit-scrollbar { width: 4px; }
+#notebook-body::-webkit-scrollbar-track { background: transparent; }
+#notebook-body::-webkit-scrollbar-thumb { background: rgba(168,130,10,0.2); border-radius: 2px; }
+
+/* ===== CAMERA FLASH EFFECT ===== */
+#flash-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 400;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes flash {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.flash-animation {
+  animation: flash 0.8s ease-out forwards;
+}
+
+@keyframes screenShakeSmall {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-1px, 1px); }
+  50% { transform: translate(1px, -1px); }
+  75% { transform: translate(-1px, -1px); }
+}
+.screen-shake-small {
+  animation: screenShakeSmall 0.15s ease-in-out;
+}
+
+/* ===== GAME START SCENE ===== */
+#game-start-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+#game-start-text {
+  font-size: clamp(32px, 8vw, 64px);
+  color: rgba(240,237,232,0.9);
+  letter-spacing: 8px;
+  font-family: var(--font);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 1s ease, transform 1s ease;
+}
+
+/* ===== TOUCH ACTIVE STATES ===== */
+button:active { opacity: 0.85; }
+
+/* ===== MISC UI ===== */
+.hidden { display: none !important; }
+.invisible { opacity: 0; }
+#progress-hint {
+  position: absolute;
+  bottom: 155px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--gray-light);
+  display: none;
+  white-space: nowrap;
+  text-shadow: 0 0 4px rgba(0,0,0,0.8);
+}
+#boy-dialogue {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 50;
+  text-align: center;
+  max-width: 80%;
+  display: none;
+}
+#boy-dialogue-text {
+  font-size: clamp(14px, 4vw, 20px);
+  color: rgba(200,190,180,0.9);
+  letter-spacing: 2px;
+  line-height: 2;
+  text-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+#footstep-indicator {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  font-size: clamp(11px, 2.5vw, 13px);
+  letter-spacing: 4px;
+  color: var(--red-mid);
+  display: none;
+  animation: blink 0.6s infinite;
+  white-space: nowrap;
+}
+
+/* Rules reveal text */
+#rules-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 50;
+  text-align: center;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 30px 40px;
+  background: rgba(4,3,1,0.95);
+  border: 1px solid rgba(168,130,10,0.2);
+  max-width: min(90vw, 500px);
+  border-radius: 2px;
+}
+#rules-text .rule-line {
+  font-size: clamp(13px, 3.5vw, 16px);
+  color: var(--amber-light);
+  letter-spacing: 2px;
+  line-height: 1.8;
+}
+#rules-text .rule-check {
+  color: rgba(80,180,80,0.7);
+  margin-right: 8px;
+}
+
+/* ===== SCENE ATMOSPHERE ANIMATIONS ===== */
+.bg-forest::after {
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 70% at 50% 40%,transparent 30%,rgba(0,0,0,.85) 100%),
+             radial-gradient(ellipse 40% 25% at 20% 70%,rgba(10,20,10,.3) 0%,transparent 60%),
+             radial-gradient(ellipse 50% 30% at 80% 60%,rgba(8,18,8,.25) 0%,transparent 55%);
+  animation:mistDrift 8s ease-in-out infinite alternate;
+}
+@keyframes mistDrift{0%{opacity:.7;transform:translateX(0)}50%{opacity:1;transform:translateX(1.5%)}100%{opacity:.8;transform:translateX(-1%)}}
+
+.bg-parking::after {
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 18% 50% at 18% 20%,rgba(230,210,140,.07) 0%,transparent 70%),
+             radial-gradient(ellipse 14% 45% at 82% 15%,rgba(220,200,120,.06) 0%,transparent 60%),
+             radial-gradient(ellipse 20% 55% at 50% 25%,rgba(200,190,120,.05) 0%,transparent 65%);
+  animation:lightFlicker 4s steps(1) infinite;
+}
+@keyframes lightFlicker{0%,89%,91%,95%,97%,100%{opacity:1}90%,96%{opacity:.4}92%,98%{opacity:.85}}
+
+.bg-taxi::after {
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 0%,rgba(180,140,60,.04) 30%,transparent 60%,rgba(160,120,40,.03) 90%);
+  animation:taxiShimmer 6s ease-in-out infinite alternate;
+}
+@keyframes taxiShimmer{0%{opacity:.5;transform:skewX(0deg)}100%{opacity:1;transform:skewX(.3deg)}}
+
+.bg-cabin-ext::after {
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(20,30,20,.4) 0%,transparent 70%),
+             radial-gradient(ellipse 60% 60% at 50% 100%,rgba(0,0,0,.5) 0%,transparent 80%);
+  animation:windSweep 10s ease-in-out infinite alternate;
+}
+@keyframes windSweep{0%{opacity:.6;transform:translateX(0)}100%{opacity:1;transform:translateX(-.8%)}}
+
+.bg-cabin-int::after {
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 50% 40% at 20% 75%,rgba(200,90,10,.12) 0%,transparent 70%),
+             radial-gradient(ellipse 30% 25% at 25% 80%,rgba(220,100,20,.08) 0%,transparent 50%);
+  animation:fireGlow 2.8s ease-in-out infinite alternate;
+}
+@keyframes fireGlow{0%{opacity:.5;transform:scale(1)}40%{opacity:1;transform:scale(1.04)}70%{opacity:.7}100%{opacity:.9;transform:scale(.98)}}
+
+.bg-deep-forest::after {
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 55% 55% at 50% 50%,transparent 20%,rgba(0,0,0,.78) 100%);
+  animation:forestBreath 5s ease-in-out infinite alternate;
+}
+@keyframes forestBreath{0%{opacity:.55}100%{opacity:1}}
+
+.bg-bathroom::after {
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 100% 30% at 50% 100%,rgba(15,20,28,.6) 0%,transparent 70%),
+             radial-gradient(ellipse 60% 40% at 50% 0%,rgba(20,28,38,.4) 0%,transparent 60%);
+  animation:steamHaze 7s ease-in-out infinite alternate;
+}
+@keyframes steamHaze{0%{opacity:.45}50%{opacity:.85}100%{opacity:.55}}
+
+
+/* ===== IMAGE BACKGROUNDS ===== */
+.bg-img {
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  transition: background-image 0.8s ease !important;
+}
+.bg-img::before { display: none !important; }
+
+/* ── 场景背景按剧情镜头顺序对应 ── */
+/* S01 逃跑：男主奔跑状态 */
+.bg-s01  { background-image: url('images/shot_02_v2.webp'); filter: grayscale(0.6) contrast(1.2) brightness(0.65); }
+/* S02 宿醉洗手间 */
+.bg-s02a { background-image: url('images/shot_03.webp');    filter: saturate(0.25) brightness(0.8); }
+.bg-s02b { background-image: url('images/shot_04_v2.webp'); filter: saturate(0.2) brightness(0.75); }
+/* S03 停车场冲突 */
+.bg-s03a { background-image: url('images/shot_06.webp');    filter: brightness(0.65) saturate(0.45); }
+.bg-s03b { background-image: url('images/shot_07.webp');    filter: brightness(0.6) saturate(0.4); }
+.bg-s03c { background-image: url('images/shot_08_v2.webp'); filter: brightness(0.55) saturate(0.35); }
+/* S04 纸扎车 */
+.bg-s04a { background-image: url('images/shot_10_v3.webp'); filter: brightness(0.6) saturate(0.45); }
+.bg-s04b { background-image: url('images/taxi.webp'); filter: brightness(0.65) saturate(0.5); }
+.bg-s04c { background-image: url('images/backmirror.webp'); filter: brightness(0.55) saturate(0.4); }
+.bg-s04d { background-image: url('images/shot_12_v2.webp'); filter: brightness(0.5) saturate(0.35); }
+/* S05 木屋外 */
+.bg-s05a { background-image: url('images/shot_13.webp');    filter: brightness(0.6) saturate(0.4); }
+.bg-s05b { background-image: url('images/shot_14.webp');    filter: brightness(0.55) saturate(0.35); }
+.bg-s05c { background-image: url('images/shot_15.webp');    filter: brightness(0.5) saturate(0.3); }
+/* S06 木屋内 */
+.bg-s06  { background-image: url('images/shot_16.webp');    filter: brightness(0.6) saturate(0.45); }
+.bg-s06b { background-image: url('images/shot_17.webp');   filter: brightness(0.52) saturate(0.42) contrast(1.05); }
+/* S07 深林落单 */
+.bg-s07a { background-image: url('images/highlight.webp');    filter: brightness(0.5) saturate(0.35); }
+.bg-s07_chop { background-image: url('images/shot_forest_chop.webp'); filter: brightness(0.5) saturate(0.35); background-size: contain !important; }
+.bg-s07b { background-image: url('images/shot_19.webp');    filter: brightness(0.5) saturate(0.35); }
+.bg-s07c { background-image: url('images/shot_19.webp');    filter: brightness(0.45) saturate(0.3); }
+.bg-s07d { background-image: url('images/catch.webp');    filter: brightness(0.55) saturate(0.4); }
+.bg-s07e { background-image: url('images/forset.webp');    filter: brightness(0.55) saturate(0.35); }
+
+/* 标题后进电话镜头前的纯暗底（不裁切构图用图） */
+.bg-img.bg-phone-intro {
+  background-image: none !important;
+  background-color: #050403 !important;
+  background-size: auto !important;
+  filter: none !important;
+}
+
+/* ── UI 面板叠图 ── */
+#notebook-panel {
+  background: rgba(4,3,2,0.97) center/cover no-repeat !important;
+}
+#notebook-panel::before {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(0,0,0,0.88);
+  pointer-events: none; z-index: 0;
+}
+#notebook-header, #notebook-body { position: relative; z-index: 1; }
+
+#fail-screen {
+  background: rgba(0,0,0,0.94) url('images/back1.webp') center/contain no-repeat !important;
+}
+#fail-screen::before {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(0,0,0,0.82);
+  pointer-events: none;
+}
+#fail-title, #fail-text, #fail-sub, #fail-retry-btn { position: relative; z-index: 1; }
+
+#end-screen {
+  background: rgba(0,0,0,0.97) url('images/back1.webp') center/contain no-repeat !important;
+}
+#end-screen::before {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(0,0,0,0.87);
+  pointer-events: none;
+}
+#end-title, #end-text, #end-stats, #end-continue { position: relative; z-index: 1; }
+
+/* Dim overlay for all image scenes */
+.bg-s01::after, .bg-s02a::after, .bg-s02b::after,
+.bg-s03a::after, .bg-s03b::after, .bg-s03c::after,
+.bg-s04a::after, .bg-s04b::after, .bg-s04c::after, .bg-s04d::after,
+.bg-s05a::after, .bg-s05b::after, .bg-s05c::after, .bg-s06::after, .bg-s06b::after,
+.bg-s07a::after, .bg-s07b::after, .bg-s07c::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.6) 100%);
+  pointer-events: none;
+}
+
+/* ===== HORROR FLASH WARNING ===== */
+#horror-warn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 310;
+  font-size: clamp(18px, 5vw, 28px);
+  color: rgba(200, 30, 20, 0.92);
+  letter-spacing: 6px;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  text-shadow: 0 0 30px rgba(200,20,10,0.6), 0 0 60px rgba(160,10,5,0.3);
+  white-space: pre-line;
+  max-width: 80vw;
+}
+
+</style>
+</head>
+<body>
+<audio id="bgm" src="BGM.mp3" loop hidden preload="auto"></audio>
+<audio id="jumpscare" src="突脸.mp3" hidden preload="auto"></audio>
+<div id="game">
+  <!-- Background -->
+  <div id="scene-bg"></div>
+  <!-- 强构图镜头：img contain + 同图模糊底（与 scene-bg cover 场景互斥显示） -->
+  <div id="scene-lens" class="scene-lens" aria-hidden="true">
+    <div class="scene-lens-blur" id="scene-lens-blur" aria-hidden="true"></div>
+    <div class="scene-lens-vig"></div>
+    <div class="scene-lens-frame">
+      <img id="scene-lens-img" class="scene-lens-img" alt="" decoding="async" draggable="false" />
+    </div>
+  </div>
+  <canvas id="rain-canvas" style="position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity 1.2s;"></canvas>
+
+  <!-- Effects -->
+  <div id="vignette"></div>
+  <div id="transition"></div>
+  <div id="horror-warn"></div>
+
+  <!-- Mirror face (S02) -->
+  <div id="mirror-face"></div>
+
+  <!-- Scene subtitle -->
+  <div id="scene-subtitle"></div>
+
+  <!-- Scene content -->
+  <div id="scene-content"></div>
+
+  <!-- Narration -->
+  <div id="narration"></div>
+
+  <!-- Rules reveal -->
+  <div id="rules-text"></div>
+
+  <!-- Boy dialogue (S07) -->
+  <div id="boy-dialogue"><div id="boy-dialogue-text"></div></div>
+
+  <!-- Footstep indicator -->
+  <div id="footstep-indicator">脚步声越来越近……</div>
+
+  <!-- Escape UI (S01) -->
+  <div id="escape-ui">
+    <div id="escape-ui-inner">
+      <div id="escape-prompt">快跑！</div>
+      <div id="escape-bar-track"><div id="escape-bar-fill"></div></div>
+      <p id="escape-subhint">交替踩踏左右鞋印逃生</p>
+      <div id="escape-feet-stage">
+        <div id="escape-zone-left" aria-hidden="true"></div>
+        <div id="escape-zone-right" aria-hidden="true"></div>
+        <div id="escape-feet">
+          <button type="button" class="escape-foot" id="escape-foot-left" aria-label="左鞋印 A">
+            <img class="escape-foot-img" src="images/l.webp" alt="" width="120" height="160" decoding="async" draggable="false" />
+          </button>
+          <button type="button" class="escape-foot" id="escape-foot-right" aria-label="右鞋印 D">
+            <img class="escape-foot-img" src="images/r.webp" alt="" width="120" height="160" decoding="async" draggable="false" />
+          </button>
+        </div>
+      </div>
+      <div id="escape-hint">PC：按 A / D 键交替奔跑<br>移动端：点击左右鞋印或左右半屏快速逃生</div>
+    </div>
+  </div>
+
+  <!-- Smell button -->
+  <button id="smell-btn">闻</button>
+  <div id="progress-hint"></div>
+
+  <!-- Smell feedback -->
+  <div id="smell-feedback"></div>
+
+  <!-- 老板来电：剧情镜头（images/phone.webp，无交互） -->
+  <div id="phone-shot-overlay" aria-hidden="true">
+    <div class="phone-shot-blur" aria-hidden="true"></div>
+    <div class="phone-shot-vignette"></div>
+    <div class="phone-shot-frame">
+      <img class="phone-shot-img" src="images/phone.webp" alt="" width="390" height="844" decoding="async" draggable="false" />
+    </div>
+  </div>
+
+  <!-- 手机规则弹出（非来电、无接听拒接） -->
+  <div id="rules-mobile-overlay" aria-hidden="true">
+    <div id="rules-mobile-shell">
+      <div id="rules-mobile-status">
+        <span id="rms-time">9:41</span>
+        <span style="letter-spacing:3px;opacity:0.55">备忘录</span>
+      </div>
+      <div id="rules-mobile-title">未知提示</div>
+      <div id="rules-mobile-body"></div>
+      <p id="rules-mobile-hint"></p>
+      <button type="button" id="rules-mobile-confirm">继续</button>
+    </div>
+  </div>
+
+  <!-- Taxi passengers -->
+  <div id="taxi-passengers"></div>
+
+  <!-- Cabin hotspots -->
+  <div id="cabin-hotspots"></div>
+
+  <!-- Ground probe (S05) -->
+  <div id="ground-probe"></div>
+
+  <!-- Path choice (S07) -->
+  <div id="path-choice"></div>
+
+  <!-- Dialogue box -->
+  <div id="dialogue-box">
+    <div id="speaker-name"></div>
+    <div id="dialogue-text"></div>
+    <div id="dialogue-continue">▶ 点击继续</div>
+  </div>
+
+  <!-- Choices -->
+  <div id="choice-panel"></div>
+
+  <!-- QTE overlay -->
+  <div id="qte-overlay">
+    <div id="qte-prompt"></div>
+    <div class="qte-actions" id="qte-actions"></div>
+  </div>
+
+  <!-- Breathing UI -->
+  <div id="breath-ui">
+    <div id="breath-ring"><div id="breath-center"></div></div>
+    <div id="breath-prompt">屏住呼吸<br><span style="font-size:11px;letter-spacing:3px;color:var(--gray-mid)">PC：长按空格 / 移动端：长按按钮</span></div>
+    <button id="breath-hold-btn">屏息</button>
+    <div id="breath-meter-bar"><div id="breath-meter-fill"></div></div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <button id="notebook-btn">手记</button>
+  </div>
+
+  <!-- Notebook panel -->
+  <div id="notebook-panel">
+    <div id="notebook-header">
+      <div id="notebook-title">· 规则手记 ·</div>
+      <button id="notebook-close">关闭</button>
+    </div>
+    <div id="notebook-body"></div>
+  </div>
+
+  <!-- Failure screen -->
+  <div id="fail-screen">
+    <div id="fail-title">· 失败 ·</div>
+    <div id="fail-text"></div>
+    <div id="fail-sub"></div>
+    <button id="fail-retry-btn">重来</button>
+  </div>
+
+  <!-- End screen -->
+  <div id="end-screen">
+    <div id="end-title">· 完 ·</div>
+    <div id="end-text"></div>
+    <div id="end-stats"></div>
+    <div id="end-continue">……待续</div>
+  </div>
+
+  <!-- Title：开场 shot_01 显影镜头 → 纯黑标题 -->
+  <div id="title-screen">
+    <div id="opening-sequence" aria-hidden="true">
+      <div id="opening-stack">
+        <div id="opening-blur" aria-hidden="true"></div>
+        <img id="opening-shot" src="images/back1.webp" alt="" decoding="async" draggable="false" />
+      </div>
+    </div>
+    <div id="title-brand">
+      <div id="title-char">诡味</div>
+      <div id="title-divider"></div>
+      <button type="button" id="start-btn">进 入</button>
+    </div>
+    <div id="title-warning">建议佩戴耳机 · 含有恐怖元素 · 请在安静环境中游玩</div>
+  </div>
+
+  <!-- Camera Flash Overlay -->
+  <div id="flash-overlay"></div>
+
+  <!-- Game Start Scene -->
+  <div id="game-start-scene">
+    <div id="game-start-text">游戏开始</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// AUDIO ENGINE
+// ============================================================
+const Audio = (() => {
+  let ctx = null;
+  function getCtx() {
+    if (!ctx) {
+      try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function tone(freq, dur, type='sine', vol=0.3, delay=0) {
+    const c = getCtx(); if (!c) return;
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.connect(gain); gain.connect(c.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, c.currentTime + delay);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.5, c.currentTime + delay + dur);
+    gain.gain.setValueAtTime(0, c.currentTime + delay);
+    gain.gain.linearRampToValueAtTime(vol, c.currentTime + delay + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + dur);
+    osc.start(c.currentTime + delay);
+    osc.stop(c.currentTime + delay + dur + 0.05);
+  }
+
+  function noise(dur, vol=0.15, highpass=200) {
+    const c = getCtx(); if (!c) return;
+    const buf = c.createBuffer(1, c.sampleRate * dur, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const filter = c.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = highpass;
+    const gain = c.createGain();
+    src.connect(filter); filter.connect(gain); gain.connect(c.destination);
+    gain.gain.setValueAtTime(vol, c.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+    src.start();
+  }
+
+  function heartbeat(beats=3) {
+    const c = getCtx(); if (!c) return;
+    for (let i = 0; i < beats; i++) {
+      tone(60, 0.1, 'sine', 0.5, i * 0.7);
+      tone(50, 0.08, 'sine', 0.3, i * 0.7 + 0.15);
+    }
+  }
+
+  function metalClang() {
+    const c = getCtx(); if (!c) return;
+    tone(800, 0.05, 'sawtooth', 0.4);
+    tone(400, 0.3, 'square', 0.2, 0.05);
+    noise(0.4, 0.3, 500);
+  }
+
+  function click() { tone(1200, 0.04, 'square', 0.1); }
+  function alert() { tone(440, 0.2, 'sawtooth', 0.25); tone(330, 0.2, 'sawtooth', 0.15, 0.2); }
+  function whoosh() { noise(0.3, 0.2, 100); tone(200, 0.3, 'sine', 0.1); }
+  function dread() {
+    tone(55, 2, 'sine', 0.25);
+    tone(58, 2, 'sine', 0.1, 0.5);
+    noise(2, 0.05, 20);
+  }
+  function phoneVibrate() {
+    const c = getCtx(); if (!c) return;
+    for (let i = 0; i < 6; i++) noise(0.08, 0.3, 80 + i * 20);
+  }
+  function successTone() {
+    tone(440, 0.15, 'sine', 0.2);
+    tone(550, 0.15, 'sine', 0.15, 0.15);
+    tone(660, 0.3, 'sine', 0.2, 0.3);
+  }
+
+  return { tone, noise, heartbeat, metalClang, click, alert, whoosh, dread, phoneVibrate, successTone };
+})();
+
+// ============================================================
+// EFFECTS ENGINE
+// ============================================================
+const Effects = (() => {
+  const game = document.getElementById('game');
+  const vignette = document.getElementById('vignette');
+  const transition = document.getElementById('transition');
+
+  function shake(duration=500) {
+    game.classList.add('shake');
+    setTimeout(() => game.classList.remove('shake'), duration);
+  }
+
+  function glitch(el, duration=300) {
+    el.classList.add('glitch');
+    setTimeout(() => el.classList.remove('glitch'), duration);
+  }
+
+  function fadeToBlack(duration=600) {
+    return new Promise(resolve => {
+      transition.style.transition = `opacity ${duration}ms`;
+      transition.classList.add('fade-in');
+      setTimeout(resolve, duration);
+    });
+  }
+
+  function fadeFromBlack(duration=600) {
+    return new Promise(resolve => {
+      transition.style.transition = `opacity ${duration}ms`;
+      transition.classList.remove('fade-in');
+      setTimeout(resolve, duration);
+    });
+  }
+
+  function screenDarken(amount) {
+    vignette.style.opacity = amount;
+  }
+
+  // 惊吓节点：短促闪黑 + 红字警告（叠在转场之上）
+  function horrorFlash(text, duration = 1600) {
+    const tr = document.getElementById('transition');
+    const warn = document.getElementById('horror-warn');
+    if (!warn || !tr) return;
+    warn.textContent = text;
+    warn.style.opacity = '0';
+    tr.style.transition = 'opacity 60ms';
+    tr.classList.add('fade-in');
+    setTimeout(() => {
+      warn.style.opacity = '1';
+      tr.style.transition = 'opacity 400ms';
+      tr.classList.remove('fade-in');
+      const hideMs = Math.max(200, duration - 400);
+      setTimeout(() => {
+        warn.style.opacity = '0';
+        setTimeout(() => { warn.textContent = ''; }, 420);
+      }, hideMs);
+    }, 80);
+  }
+
+  return { shake, glitch, fadeToBlack, fadeFromBlack, screenDarken, horrorFlash };
+})();
+
+// ============================================================
+// RAIN ENGINE
+// ============================================================
+const Rain = (() => {
+  let canvas, ctx, drops = [], animId, active = false;
+  function init() {
+    canvas = document.getElementById('rain-canvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+    resize();
+    window.addEventListener('resize', resize);
+  }
+  function resize() {
+    if (!canvas) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  function start(density) {
+    density = density || 0.4;
+    if (!canvas) init();
+    active = true; drops = [];
+    const count = Math.floor(window.innerWidth * 0.08 * density);
+    for (let i = 0; i < count; i++) {
+      drops.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+        len: 8+Math.random()*14, speed: 5+Math.random()*7, op: 0.05+Math.random()*0.1 });
+    }
+    canvas.style.opacity = '1';
+    loop();
+  }
+  function stop() {
+    active = false;
+    if (animId) cancelAnimationFrame(animId);
+    if (canvas) canvas.style.opacity = '0';
+    setTimeout(function(){ drops = []; }, 1200);
+  }
+  function loop() {
+    if (!active || !ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 0.6;
+    drops.forEach(function(d) {
+      ctx.globalAlpha = d.op;
+      ctx.strokeStyle = 'rgba(160,180,200,1)';
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x + d.len*0.15, d.y + d.len);
+      ctx.stroke();
+      d.y += d.speed; d.x += d.speed * 0.12;
+      if (d.y > canvas.height) { d.y = -d.len; d.x = Math.random()*canvas.width; }
+    });
+    ctx.globalAlpha = 1;
+    animId = requestAnimationFrame(loop);
+  }
+  return { init: init, start: start, stop: stop };
+})();
+
+// ============================================================
+// GAME STATE
+// ============================================================
+const State = {
+  scene: 'title',
+  correctChoices: 0,
+  notebook: [],
+  smellUses: 0,
+  escapeSuccess: false,
+  breathSuccess: false,
+  s07Phase: 1,
+  failScene: null,
+  isRestart: false
+};
+
+function resetGameProgress() {
+  State.scene = 'title';
+  State.correctChoices = 0;
+  State.notebook = [];
+  State.smellUses = 0;
+  State.escapeSuccess = false;
+  State.breathSuccess = false;
+  State.s07Phase = 1;
+  State.failScene = null;
+}
+
+// ============================================================
+// DIALOGUE ENGINE
+// ============================================================
+const Dialogue = (() => {
+  const box = document.getElementById('dialogue-box');
+  const speakerEl = document.getElementById('speaker-name');
+  const textEl = document.getElementById('dialogue-text');
+  const continueEl = document.getElementById('dialogue-continue');
+
+  let queue = [];
+  let typing = false;
+  let current = null;
+  let typeInterval = null;
+  let onComplete = null;
+  let canContinue = false;
+
+  function typeText(text, speed=40) {
+    textEl.textContent = '';
+    let i = 0;
+    typing = true;
+    canContinue = false;
+    continueEl.style.display = 'none';
+    if (typeInterval) clearInterval(typeInterval);
+    typeInterval = setInterval(() => {
+      if (i < text.length) {
+        textEl.textContent += text[i++];
+      } else {
+        clearInterval(typeInterval);
+        typing = false;
+        canContinue = true;
+        continueEl.style.display = 'block';
+      }
+    }, speed);
+  }
+
+  function skipTyping() {
+    if (typeInterval) clearInterval(typeInterval);
+    if (current) textEl.textContent = current.text;
+    typing = false;
+    canContinue = true;
+    continueEl.style.display = 'block';
+  }
+
+  function showNext() {
+    if (typing) { skipTyping(); return; }
+    if (queue.length === 0) {
+      hide();
+      if (onComplete) { const cb = onComplete; onComplete = null; cb(); }
+      return;
+    }
+    current = queue.shift();
+    speakerEl.textContent = current.speaker || '';
+    speakerEl.style.display = current.speaker ? 'block' : 'none';
+    box.style.display = 'block';
+    typeText(current.text, current.speed || 40);
+  }
+
+  function show(dialogues, callback) {
+    queue = [...dialogues];
+    onComplete = callback || null;
+    showNext();
+  }
+
+  function hide() {
+    box.style.display = 'none';
+    queue = [];
+    typing = false;
+    canContinue = false;
+  }
+
+  function resetState() {
+    if (typeInterval) clearInterval(typeInterval);
+    typeInterval = null;
+    queue = [];
+    typing = false;
+    canContinue = false;
+    onComplete = null;
+    box.style.display = 'none';
+    if (speakerEl) { speakerEl.textContent = ''; speakerEl.style.display = 'none'; }
+    if (textEl) textEl.textContent = '';
+    if (continueEl) continueEl.style.display = 'none';
+  }
+
+  function addClickListener() {
+    const handler = () => {
+      if (box.style.display !== 'none') {
+      showNext();
+      }
+    };
+    box.addEventListener('click', handler);
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Enter' || e.code === 'Space') {
+        if (box.style.display !== 'none') { e.preventDefault();
+      showNext(); }
+      }
+    });
+  }
+
+  return { show, hide, resetState, addClickListener };
+})();
+
+// ============================================================
+// SMELL MECHANIC
+// ============================================================
+const Smell = (() => {
+  const btn = document.getElementById('smell-btn');
+  const feedback = document.getElementById('smell-feedback');
+  const progressHint = document.getElementById('progress-hint');
+  const COMPLETE_HINT_TEXT = '▶ 闻感结束 点击继续';
+  const COMPLETE_HINT_DELAY = 1500;
+  let currentLines = [];
+  let currentIndex = 0;
+  let holdTimer = null;
+  let finalTimer = null;
+  let completeTimer = null;
+  let isHolding = false;
+  let enabled = false;
+  let onComplete = null;
+  let completionActive = false;
+  let previousHintText = '';
+  let previousHintVisible = false;
+  let currentCompleteHintText = COMPLETE_HINT_TEXT;
+
+  function clearCompletionHint() {
+    if (completeTimer) {
+      clearTimeout(completeTimer);
+      completeTimer = null;
+    }
+    if (completionActive && progressHint) {
+      progressHint.textContent = '';
+      progressHint.style.display = 'none';
+    }
+    completionActive = false;
+    previousHintText = '';
+    previousHintVisible = false;
+  }
+
+  function captureHintState() {
+    if (!progressHint) return;
+    previousHintText = progressHint.textContent;
+    previousHintVisible = progressHint.style.display !== 'none' && !!progressHint.textContent;
+  }
+
+  function restoreHintState() {
+    if (!progressHint) return;
+    if (previousHintVisible && previousHintText) {
+      progressHint.textContent = previousHintText;
+      progressHint.style.display = 'block';
+    } else {
+      progressHint.textContent = '';
+      progressHint.style.display = 'none';
+    }
+    previousHintText = '';
+    previousHintVisible = false;
+  }
+
+  function finishInteraction() {
+    if (completionActive) return;
+    if (holdTimer) {
+      clearTimeout(holdTimer);
+      holdTimer = null;
+    }
+    if (finalTimer) {
+      clearTimeout(finalTimer);
+      finalTimer = null;
+    }
+    isHolding = false;
+    btn.classList.remove('active');
+    captureHintState();
+    completionActive = true;
+    if (progressHint) {
+      progressHint.textContent = currentCompleteHintText;
+      progressHint.style.display = 'block';
+    }
+    completeTimer = setTimeout(() => {
+      completionActive = false;
+      restoreHintState();
+      const cb = onComplete;
+      onComplete = null;
+      if (cb) cb();
+    }, COMPLETE_HINT_DELAY);
+  }
+
+  function setLines(lines, callback, options) {
+    options = options || {};
+    clearCompletionHint();
+    if (holdTimer) {
+      clearTimeout(holdTimer);
+      holdTimer = null;
+    }
+    if (finalTimer) {
+      clearTimeout(finalTimer);
+      finalTimer = null;
+    }
+    currentLines = lines;
+    currentIndex = 0;
+    onComplete = callback || null;
+    currentCompleteHintText = options.completeHintText || COMPLETE_HINT_TEXT;
+    feedback.innerHTML = '';
+    lines.forEach((line, i) => {
+      const el = document.createElement('div');
+      el.className = 'smell-line' + (line.type === 'anomaly' ? ' anomaly' : line.type === 'danger' ? ' danger' : '');
+      el.textContent = line.text;
+      feedback.appendChild(el);
+    });
+  }
+
+  function revealNext() {
+    if (currentIndex >= currentLines.length) {
+      finishInteraction();
+      return;
+    }
+    const lines = feedback.querySelectorAll('.smell-line');
+    if (lines[currentIndex]) {
+      lines[currentIndex].classList.add('visible');
+      currentIndex++;
+      Audio.tone(220, 0.3, 'sine', 0.1);
+    }
+  }
+
+  function show() {
+    btn.style.display = 'flex';
+    enabled = true;
+    feedback.style.display = 'block';
+  }
+
+  function hide() {
+    btn.style.display = 'none';
+    enabled = false;
+    clearCompletionHint();
+    feedback.style.display = 'none';
+    feedback.innerHTML = '';
+  }
+
+  function clearFeedback() {
+    clearCompletionHint();
+    if (holdTimer) {
+      clearTimeout(holdTimer);
+      holdTimer = null;
+    }
+    if (finalTimer) {
+      clearTimeout(finalTimer);
+      finalTimer = null;
+    }
+    feedback.innerHTML = '';
+    currentIndex = 0;
+    currentLines = [];
+    onComplete = null;
+    currentCompleteHintText = COMPLETE_HINT_TEXT;
+    btn.classList.remove('active');
+  }
+
+  function attachEvents() {
+    const startHold = () => {
+      if (!enabled || completionActive) return;
+      isHolding = true;
+      btn.classList.add('active');
+      
+      // 自动依次显示所有文案
+      const autoReveal = () => {
+        if (!isHolding) {
+          if (holdTimer) clearTimeout(holdTimer);
+          if (finalTimer) clearTimeout(finalTimer);
+          return;
+        }
+        
+        if (currentIndex >= currentLines.length) {
+          if (holdTimer) clearTimeout(holdTimer);
+          // 最后一条显示后短暂停顿，再展示统一的结束提示
+          finalTimer = setTimeout(() => {
+            finishInteraction();
+          }, 1200);
+          return;
+        }
+        
+        revealNext();
+        holdTimer = setTimeout(autoReveal, 1200); // 每条文案间隔1.2s自动浮现
+      };
+      
+      // 第一次600ms后开始显示
+      holdTimer = setTimeout(autoReveal, 600);
+    };
+    const endHold = () => {
+      isHolding = false;
+      btn.classList.remove('active');
+      if (holdTimer) clearTimeout(holdTimer);
+    };
+    btn.addEventListener('mousedown', startHold);
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(); }, { passive: false });
+    btn.addEventListener('mouseup', endHold);
+    btn.addEventListener('mouseleave', endHold);
+    btn.addEventListener('touchend', endHold);
+    btn.addEventListener('touchcancel', endHold);
+  }
+
+  return { setLines, show, hide, clearFeedback, attachEvents };
+})();
+
+// ============================================================
+// NOTEBOOK
+// ============================================================
+const Notebook = (() => {
+  const panel = document.getElementById('notebook-panel');
+  const body = document.getElementById('notebook-body');
+  const btn = document.getElementById('notebook-btn');
+  const closeBtn = document.getElementById('notebook-close');
+  let entries = [];
+  let unlocked = false;
+
+  function unlock() {
+    unlocked = true;
+    btn.classList.add('glow');
+    Audio.successTone();
+  }
+
+  function addRule(title, text) {
+    entries.push({ type: 'rule', title, text });
+    render();
+  }
+
+  function addObservation(title, text) {
+    entries.push({ type: 'observation', title, text });
+    render();
+  }
+
+  function render() {
+    body.innerHTML = '';
+    entries.forEach(e => {
+      const div = document.createElement('div');
+      if (e.type === 'rule') {
+        div.className = 'notebook-rule fade-in-up';
+        div.innerHTML = `<div class="notebook-rule-title">✓ ${e.title}</div><div class="notebook-rule-text">${e.text}</div>`;
+      } else {
+        div.className = 'notebook-observation fade-in-up';
+        div.innerHTML = `<div class="notebook-observation-title">⚠ ${e.title}</div><div class="notebook-observation-text">${e.text}</div>`;
+      }
+      body.appendChild(div);
+    });
+  }
+
+  function open() {
+    if (!unlocked) return;
+    panel.style.display = 'flex';
+      }
+
+  function close() {
+    panel.style.display = 'none';
+  }
+
+  function reset() {
+    entries = [];
+    unlocked = false;
+    body.innerHTML = '';
+    panel.style.display = 'none';
+    btn.classList.remove('glow');
+  }
+
+  function init() {
+    btn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+  }
+
+  return { unlock, addRule, addObservation, open, close, reset, init };
+})();
+
+// 手机规则弹出层（非来电、无接听拒接）
+const RulesMobileUi = (() => {
+  function $(id) { return document.getElementById(id); }
+  function updateClock() {
+    const el = $('rms-time');
+    if (!el) return;
+    const d = new Date();
+    el.textContent = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+  }
+  return {
+    open() {
+      const o = $('rules-mobile-overlay');
+      if (!o) return;
+      o.setAttribute('aria-hidden', 'false');
+      o.style.display = 'flex';
+      updateClock();
+      requestAnimationFrame(() => o.classList.add('rms-visible'));
+    },
+    hide() {
+      const o = $('rules-mobile-overlay');
+      if (!o) return;
+      o.classList.remove('rms-visible');
+      setTimeout(() => {
+        o.style.display = 'none';
+        o.setAttribute('aria-hidden', 'true');
+      }, 350);
+    },
+    resetAll() {
+      const o = $('rules-mobile-overlay');
+      if (o) {
+        o.onclick = null;
+        o.classList.remove('rms-visible', 'rms-dismiss-tap');
+        o.style.display = 'none';
+        o.setAttribute('aria-hidden', 'true');
+      }
+      const hint = $('rules-mobile-hint');
+      if (hint) {
+        hint.textContent = '';
+        hint.style.display = 'none';
+      }
+      const body = $('rules-mobile-body');
+      if (body) body.textContent = '';
+      const btn = $('rules-mobile-confirm');
+      if (btn) {
+        btn.style.display = 'none';
+        btn.onclick = null;
+      }
+    },
+    setTitle(t) {
+      const el = $('rules-mobile-title');
+      if (el) el.textContent = t || '';
+    }
+  };
+})();
+
+// 来电画面短暂镜头（非玩法）
+const PhoneShot = (() => {
+  function $(id) { return document.getElementById(id); }
+  return {
+    resetAll() {
+      const o = $('phone-shot-overlay');
+      if (!o) return;
+      o.classList.remove('phone-shot-visible', 'phone-shot-layered');
+      o.style.display = 'none';
+      o.setAttribute('aria-hidden', 'true');
+      const blur = document.querySelector('#phone-shot-overlay .phone-shot-blur');
+      if (blur) {
+        blur.style.backgroundImage = '';
+        blur.style.filter = '';
+      }
+    },
+    show() {
+      const o = $('phone-shot-overlay');
+      if (!o) return;
+      o.style.display = 'flex';
+      o.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => o.classList.add('phone-shot-visible'));
+    },
+    hide() {
+      const o = $('phone-shot-overlay');
+      if (!o) return;
+      o.classList.remove('phone-shot-visible');
+      setTimeout(() => {
+        o.style.display = 'none';
+        o.setAttribute('aria-hidden', 'true');
+      }, 450);
+    },
+    /** 仅在宿醉镜中：层叠于当前镜头之上，blur 底图为宿醉主图 */
+    async playLayered(durationMs = 1500, bathroomBlurSrc) {
+      const o = $('phone-shot-overlay');
+      const blur = document.querySelector('#phone-shot-overlay .phone-shot-blur');
+      if (bathroomBlurSrc && blur) {
+        blur.style.backgroundImage = `url('${bathroomBlurSrc}')`;
+        blur.style.filter = 'blur(38px) brightness(0.32) saturate(0.72)';
+        if (o) o.classList.add('phone-shot-layered');
+      }
+      this.show();
+      await new Promise((r) => setTimeout(r, durationMs));
+      this.hide();
+      await new Promise((r) => setTimeout(r, 420));
+      if (blur) {
+        blur.style.backgroundImage = '';
+        blur.style.filter = '';
+      }
+      if (o) o.classList.remove('phone-shot-layered');
+    }
+  };
+})();
+
+// 强构图镜头：src + CSS filter（原 .bg-s** 滤镜迁至 img）
+const SCENE_LENS_DATA = {
+  'bg-s01': { src: 'images/shot_02_v2.webp', filter: 'grayscale(0.6) contrast(1.2) brightness(0.65)' },
+  'bg-s02a': { src: 'images/shot_03.webp', filter: 'saturate(0.25) brightness(0.8)' },
+  'bg-s02b': { src: 'images/shot_04_v2.webp', filter: 'saturate(0.2) brightness(0.75)' },
+  'bg-s03a': { src: 'images/shot_06.webp', filter: 'brightness(0.65) saturate(0.45)' },
+  'bg-s03b': { src: 'images/shot_07.webp', filter: 'brightness(0.6) saturate(0.4)' },
+  'bg-s03c': { src: 'images/shot_08_v2.webp', filter: 'brightness(0.55) saturate(0.35)' },
+  'bg-s04a': { src: 'images/shot_10_v3.webp', filter: 'brightness(0.6) saturate(0.45)' },
+  'bg-s04b': { src: 'images/taxi.webp', filter: 'brightness(0.65) saturate(0.5)' },
+  'bg-s04c': { src: 'images/backmirror.webp', filter: 'brightness(0.55) saturate(0.4)' },
+  'bg-s04d': { src: 'images/shot_12_v2.webp', filter: 'brightness(0.5) saturate(0.35)' },
+  'bg-s05a': { src: 'images/shot_13.webp', filter: 'brightness(0.6) saturate(0.4)' },
+  'bg-s05b': { src: 'images/shot_14.webp', filter: 'brightness(0.55) saturate(0.35)' },
+  'bg-s05c': { src: 'images/shot_15.webp', filter: 'brightness(0.5) saturate(0.3)' },
+  'bg-s06': { src: 'images/shot_16.webp', filter: 'brightness(0.6) saturate(0.45)' },
+  'bg-s06b': { src: 'images/shot_17.webp', filter: 'brightness(0.52) saturate(0.42) contrast(1.05)' },
+  'bg-s07a': { src: 'images/highlight.webp', filter: 'brightness(0.5) saturate(0.35)' },
+  'bg-s07_chop': { src: 'images/shot_forest_chop.webp', filter: 'brightness(0.5) saturate(0.35)' },
+  'bg-s07b': { src: 'images/shot_19.webp', filter: 'brightness(0.5) saturate(0.35)' },
+  'bg-s07c': { src: 'images/shot_19.webp', filter: 'brightness(0.45) saturate(0.3)' },
+  'bg-s07d': { src: 'images/catch.webp', filter: 'brightness(0.55) saturate(0.4)' },
+  'bg-s07e': { src: 'images/forset.webp', filter: 'brightness(0.55) saturate(0.35)' }
+};
+
+const SceneLens = (() => {
+  const wrap = () => document.getElementById('scene-lens');
+  const img = () => document.getElementById('scene-lens-img');
+  const blurEl = () => document.getElementById('scene-lens-blur');
+
+  function hide() {
+    const w = wrap();
+    if (w) {
+      w.classList.remove('scene-lens--on');
+      w.setAttribute('aria-hidden', 'true');
+    }
+    const i = img();
+    if (i) {
+      i.removeAttribute('src');
+      i.style.filter = '';
+    }
+    const b = blurEl();
+    if (b) b.style.backgroundImage = '';
+  }
+
+  function parseKey(className) {
+    if (!className || typeof className !== 'string') return null;
+    const m = className.match(/\bbg-s\d{2}[a-z]?\b/);
+    return m ? m[0] : null;
+  }
+
+  function showByKey(key) {
+    const data = SCENE_LENS_DATA[key];
+    if (!data) {
+      hide();
+      return false;
+    }
+    const w = wrap();
+    const i = img();
+    const b = blurEl();
+    if (!w || !i) return false;
+    i.src = data.src;
+    i.style.filter = data.filter;
+    if (b) b.style.backgroundImage = `url('${data.src}')`;
+    w.classList.add('scene-lens--on');
+    w.setAttribute('aria-hidden', 'false');
+    return true;
+  }
+
+  return { hide, showByKey, parseKey, resetAll: hide };
+})();
+
+// ============================================================
+// SCENE MANAGER
+// ============================================================
+const SceneManager = (() => {
+  let currentScene = null;
+  const bg = document.getElementById('scene-bg');
+  const hud = document.getElementById('hud');
+
+  function applySceneBackground(className) {
+    if (!className) return;
+    if (className.includes('bg-phone-intro')) {
+      SceneLens.hide();
+      bg.className = className;
+      bg.style.backgroundPosition = '';
+      return;
+    }
+    const key = SceneLens.parseKey(className);
+    if (key && SCENE_LENS_DATA[key]) {
+      SceneLens.showByKey(key);
+      bg.className = 'bg-img bg-lens-underlay';
+      bg.style.backgroundPosition = '';
+      return;
+    }
+    SceneLens.hide();
+    bg.className = className;
+    bg.style.backgroundPosition = '';
+  }
+
+  async function go(sceneName, data, opts) {
+    opts = opts || {};
+    if (!opts.skipTransition) {
+      await Effects.fadeToBlack(700);
+    }
+    if (currentScene && Scenes[currentScene] && Scenes[currentScene].exit) {
+      Scenes[currentScene].exit();
+    }
+    hideAllUI();
+    currentScene = sceneName;
+    State.scene = sceneName;
+    if (!opts.skipTransition) {
+      await new Promise(r => setTimeout(r, 280));
+      await Effects.fadeFromBlack(1100);
+      await new Promise(r => setTimeout(r, 320));
+    } else {
+      await new Promise(r => setTimeout(r, 40));
+    }
+    if (Scenes[sceneName]) Scenes[sceneName].enter(data);
+  }
+
+  // 带短暂闪黑的 mid-scene 背景切换（镜头感）
+  async function cutBg(className) {
+    const tr = document.getElementById('transition');
+    tr.style.transition = 'opacity 120ms';
+    tr.classList.add('fade-in');
+    await new Promise(r => setTimeout(r, 130));
+    applySceneBackground(className);
+    tr.style.transition = 'opacity 350ms';
+    tr.classList.remove('fade-in');
+  }
+
+  function hideAllUI() {
+    const escapeRoot = document.getElementById('escape-ui');
+    escapeRoot.style.display = 'none';
+    escapeRoot.classList.remove('escape-ui--pretitle');
+    escapeRoot.style.zIndex = '';
+    const escapeInner = document.getElementById('escape-ui-inner');
+    if (escapeInner) escapeInner.classList.remove('shake-L', 'shake-R', 'escape-atmo-pulse');
+    document.getElementById('scene-content').innerHTML = '';
+    document.getElementById('narration').style.display = 'none';
+    document.getElementById('rules-text').style.display = 'none';
+    const st = document.getElementById('scene-subtitle');
+    if (st) { st.textContent = ''; st.classList.remove('visible'); }
+
+    const boyDial = document.getElementById('boy-dialogue');
+    boyDial.style.display = 'none';
+    const boyText = document.getElementById('boy-dialogue-text');
+    if (boyText) {
+      boyText.textContent = '';
+      boyText.style.color = '';
+      boyText.style.fontSize = '';
+    }
+    document.getElementById('footstep-indicator').style.display = 'none';
+
+    const taxi = document.getElementById('taxi-passengers');
+    taxi.innerHTML = '';
+    taxi.style.display = 'none';
+    taxi.style.opacity = '';
+    taxi.style.pointerEvents = '';
+
+    const cabin = document.getElementById('cabin-hotspots');
+    cabin.innerHTML = '';
+    cabin.style.display = 'none';
+
+    const ground = document.getElementById('ground-probe');
+    ground.style.display = 'none';
+    ground.innerHTML = '';
+    ground.classList.remove('ground-probe--smell-slot');
+
+    const pathChoice = document.getElementById('path-choice');
+    pathChoice.style.display = 'none';
+    pathChoice.innerHTML = '';
+
+    const choicePanel = document.getElementById('choice-panel');
+    choicePanel.style.display = 'none';
+    choicePanel.innerHTML = '';
+
+    RulesMobileUi.resetAll();
+    PhoneShot.resetAll();
+    SceneLens.hide();
+
+    const qte = document.getElementById('qte-overlay');
+    qte.style.display = 'none';
+    const qp = document.getElementById('qte-prompt');
+    const qa = document.getElementById('qte-actions');
+    if (qp) qp.textContent = '';
+    if (qa) qa.innerHTML = '';
+
+    const breath = document.getElementById('breath-ui');
+    breath.style.display = 'none';
+    breath.style.opacity = '';
+    breath.style.pointerEvents = '';
+    breath.style.zIndex = '';
+    const bfill = document.getElementById('breath-meter-fill');
+    if (bfill) bfill.style.width = '';
+    const bcenter = document.getElementById('breath-center');
+    const bbtn = document.getElementById('breath-hold-btn');
+    if (bcenter) bcenter.classList.remove('stable');
+    if (bbtn) bbtn.classList.remove('held');
+
+    const fail = document.getElementById('fail-screen');
+    fail.style.display = 'none';
+    fail.style.opacity = '';
+    fail.style.pointerEvents = '';
+    fail.style.visibility = '';
+    const failRetryBtn = document.getElementById('fail-retry-btn');
+    if (failRetryBtn) failRetryBtn.onclick = null;
+
+    const end = document.getElementById('end-screen');
+    end.style.display = 'none';
+    end.style.opacity = '';
+    end.style.pointerEvents = '';
+
+    const trOverlay = document.getElementById('transition');
+    if (trOverlay) {
+      trOverlay.classList.remove('fade-in');
+      trOverlay.style.pointerEvents = 'none';
+    }
+
+    const smellBtn = document.getElementById('smell-btn');
+    if (smellBtn) smellBtn.classList.remove('active');
+
+    const lensEl = document.getElementById('scene-lens');
+    if (lensEl) lensEl.classList.remove('scene-lens--on');
+
+    document.getElementById('mirror-face').style.display = 'none';
+    document.getElementById('progress-hint').textContent = '';
+    document.getElementById('progress-hint').style.display = 'none';
+
+    const hw = document.getElementById('horror-warn');
+    if (hw) { hw.textContent = ''; hw.style.opacity = '0'; }
+
+    Dialogue.resetState();
+    Smell.hide();
+    Smell.clearFeedback();
+
+    const game = document.getElementById('game');
+    if (game) game.classList.remove('shake', 'glitch');
+  }
+
+  function setBg(className) {
+    applySceneBackground(className);
+  }
+
+  function setBgCut(className) { cutBg(className); }
+
+  function showHud(show=true) {
+    hud.style.display = show ? 'flex' : 'none';
+  }
+
+  return { go, hideAllUI, setBg, setBgCut, showHud };
+})();
+
+// ============================================================
+// SCENES
+// ============================================================
+const Scenes = {};
+
+// ---------- TITLE ----------
+Scenes.title = {
+  DEVELOP_MS: 5200,
+  RATTLE_MS: 340,
+  SHOCK_MS: 2400,
+  FIGURE_FADE_MS: 380,
+  PRE_BLACK_MS: 380,
+
+  async runOpeningFigureIntro(seq) {
+    await new Promise((r) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          seq.classList.add('opening--develop');
+          r();
+        });
+      });
+    });
+    await new Promise((r) => setTimeout(r, this.DEVELOP_MS));
+  },
+
+  async runFaceLungeShock(seq) {
+    const shot = document.getElementById('opening-shot');
+    const blur = document.getElementById('opening-blur');
+    shot.src = 'images/back2.webp';
+    blur.style.backgroundImage = "url('images/back2.webp')";
+
+    seq.classList.remove('opening--develop');
+    seq.classList.add('opening--shock');
+    await new Promise((r) => setTimeout(r, this.SHOCK_MS));
+  },
+
+  async runOpeningRattle(seq) {
+    Effects.shake(this.RATTLE_MS);
+    seq.classList.add('opening--rattle');
+    await new Promise((r) => setTimeout(r, this.RATTLE_MS));
+    seq.classList.remove('opening--rattle');
+    await new Promise((r) => setTimeout(r, 110));
+  },
+
+  async hideOpeningStackQuick(stack, seq) {
+    seq.classList.add('opening--exit');
+    await new Promise((r) => setTimeout(r, this.FIGURE_FADE_MS));
+    seq.style.display = 'none';
+    seq.classList.remove('opening--exit');
+    stack.style.opacity = '1';
+    seq.setAttribute('aria-hidden', 'true');
+  },
+
+  async showTitleBrandAfterBlack(screen, brand) {
+    SceneManager.setBg('bg-img bg-phone-intro');
+    SceneLens.hide();
+    screen.classList.remove('title-screen--under-pretitle');
+    brand.style.display = 'flex';
+    brand.classList.add('title-brand--visible');
+    screen.classList.add('title-phase-brand');
+    await Effects.fadeFromBlack(900);
+  },
+
+  async runOpeningSequence() {
+    const screen = document.getElementById('title-screen');
+    const seq = document.getElementById('opening-sequence');
+    const stack = document.getElementById('opening-stack');
+    const brand = document.getElementById('title-brand');
+    const shot = document.getElementById('opening-shot');
+    const blur = document.getElementById('opening-blur');
+    if (!screen || !seq || !stack || !brand) return;
+
+    // Reset image sources for restart scenarios
+    if (shot) shot.src = 'images/back1.webp';
+    if (blur) blur.style.backgroundImage = "url('images/back1.webp')";
+
+    seq.classList.remove('opening--develop', 'opening--rattle', 'opening--shock', 'opening--exit');
+    stack.style.opacity = '1';
+    brand.classList.remove('title-brand--visible');
+    brand.style.display = 'none';
+    screen.classList.remove('title-phase-brand', 'title-screen--under-pretitle');
+    screen.style.display = 'flex';
+    seq.style.display = 'flex';
+    seq.setAttribute('aria-hidden', 'false');
+
+    await this.runOpeningFigureIntro(seq);
+    await this.runOpeningRattle(seq);
+    await this.runFaceLungeShock(seq);
+    await this.hideOpeningStackQuick(stack, seq);
+
+    screen.classList.add('title-screen--under-pretitle');
+    SceneManager.setBg('bg-img bg-s01');
+    Audio.dread();
+
+    playJumpscare();
+    await Scenes.s01.runPreTitleEscape();
+
+    const esc = document.getElementById('escape-ui');
+    if (esc) {
+      esc.classList.remove('escape-ui--pretitle');
+      esc.style.display = 'none';
+    }
+    Effects.screenDarken(0);
+    const fill = document.getElementById('escape-bar-fill');
+    if (fill) fill.style.width = '0%';
+
+    await Effects.fadeToBlack(780);
+    await new Promise((r) => setTimeout(r, this.PRE_BLACK_MS));
+    await this.showTitleBrandAfterBlack(screen, brand);
+  },
+
+  async enter() {
+    SceneManager.setBg('bg-img bg-phone-intro');
+    SceneManager.showHud(false);
+    const titleEl = document.getElementById('title-screen');
+    const brand = document.getElementById('title-brand');
+    const seq = document.getElementById('opening-sequence');
+    titleEl.style.display = 'flex';
+    titleEl.style.opacity = '1';
+
+    if (State.isRestart) {
+      if (seq) {
+        seq.style.display = 'none';
+        seq.setAttribute('aria-hidden', 'true');
+      }
+      titleEl.classList.remove('title-screen--under-pretitle');
+      brand.style.display = 'flex';
+      brand.classList.add('title-brand--visible');
+      titleEl.classList.add('title-phase-brand');
+    } else {
+      await this.runOpeningSequence();
+    }
+
+    const startBtn = document.getElementById('start-btn');
+    const flashOverlay = document.getElementById('flash-overlay');
+    const gameStartScene = document.getElementById('game-start-scene');
+    const gameStartText = document.getElementById('game-start-text');
+    const gameEl = document.getElementById('game');
+    
+    startBtn.addEventListener('click', async () => {
+      try { Audio.tone(440, 0.1, 'sine', 0.1); } catch (e) {}
+      
+      // 隐藏标题界面
+      titleEl.style.transition = 'opacity 0.3s ease';
+      titleEl.style.opacity = '0';
+      await new Promise((r) => setTimeout(r, 300));
+      titleEl.style.display = 'none';
+      
+      // 显示游戏开始场景
+      gameStartScene.style.display = 'flex';
+      await new Promise((r) => setTimeout(r, 50));
+      gameStartText.style.opacity = '1';
+      gameStartText.style.transform = 'translateY(0)';
+      
+      // 等待文字显示完成
+      await new Promise((r) => setTimeout(r, 1500));
+      
+      // 淡出游戏开始场景
+      gameStartScene.style.transition = 'opacity 0.6s ease';
+      gameStartScene.style.opacity = '0';
+      await new Promise((r) => setTimeout(r, 600));
+      gameStartScene.style.display = 'none';
+      
+      // 进入正式游戏
+      SceneManager.showHud(true);
+      SceneManager.go('s02', null, { skipTransition: true });
+    }, { once: true });
+  }
+};
+
+// ---------- S01: 仅标题前快跑（全作唯一；UI 与旧第二章快跑完全一致，无“简化版”）----------
+Scenes.s01 = {
+  progress: 0,
+  keyHandler: null,
+  decayInterval: null,
+  _ended: false,
+  _pretitleMode: false,
+  _preTitleResolve: null,
+  _failTimeoutId: null,
+
+  async runPreTitleEscape() {
+    return new Promise(async (resolve) => {
+      // 触发相机闪光效果
+      const flashOverlay = document.getElementById('flash-overlay');
+      const gameEl = document.getElementById('game');
+      if (flashOverlay && gameEl) {
+        try { 
+          // 拍照快门音效
+          Audio.tone(1200, 0.05, 'square', 0.2);
+          Audio.noise(0.1, 0.3);
+        } catch (e) {}
+        
+        // 触发闪光效果
+        flashOverlay.classList.add('flash-animation');
+        
+        // 轻微屏幕抖动
+        gameEl.classList.add('screen-shake-small');
+        setTimeout(() => gameEl.classList.remove('screen-shake-small'), 150);
+        
+        // 等待闪光到最亮再显示逃跑界面
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      
+      this._preTitleResolve = resolve;
+      this._pretitleMode = true;
+      this.progress = 0;
+      this._lastEscapeFoot = null;
+      this._ended = false;
+      const fillEl = document.getElementById('escape-bar-fill');
+      if (fillEl) fillEl.style.width = '0%';
+      const ui = document.getElementById('escape-ui');
+      ui.classList.add('escape-ui--pretitle');
+      ui.style.display = 'flex';
+      Audio.dread();
+      Effects.horrorFlash('快\n跑', 1400);
+      this._attachEscapeMechanism();
+    });
+  },
+
+  _escapeActive() {
+    return this._pretitleMode;
+  },
+
+  _attachEscapeMechanism() {
+    const ui = document.getElementById('escape-ui');
+    const inner = document.getElementById('escape-ui-inner');
+    const fill = document.getElementById('escape-bar-fill');
+    const barTrack = document.getElementById('escape-bar-track');
+    const footL = document.getElementById('escape-foot-left');
+    const footR = document.getElementById('escape-foot-right');
+    const zoneL = document.getElementById('escape-zone-left');
+    const zoneR = document.getElementById('escape-zone-right');
+    if (this._failTimeoutId) {
+      clearTimeout(this._failTimeoutId);
+      this._failTimeoutId = null;
+    }
+
+    const flashFoot = (side) => {
+      const el = side === 'left' ? footL : footR;
+      el.classList.add('is-lit', 'press-in');
+      setTimeout(() => {
+        el.classList.remove('is-lit', 'press-in');
+      }, 130);
+    };
+
+    const pulseFx = () => {
+      ui.classList.add('escape-atmo-pulse');
+      setTimeout(() => ui.classList.remove('escape-atmo-pulse'), 320);
+      barTrack.classList.add('bar-pulse');
+      setTimeout(() => barTrack.classList.remove('bar-pulse'), 160);
+    };
+
+    const shake = (side) => {
+      inner.classList.remove('shake-L', 'shake-R');
+      void inner.offsetWidth;
+      inner.classList.add(side === 'left' ? 'shake-L' : 'shake-R');
+    };
+
+    let darkLevel = 0;
+    const triggerFoot = (side) => {
+      if (this._ended) return;
+      const alternate = this._lastEscapeFoot !== null && this._lastEscapeFoot !== side;
+      this._lastEscapeFoot = side;
+      const gain = alternate ? 5.6 : 3.1;
+      Audio.tone(280 + this.progress * 3 + (alternate ? 35 : 0), 0.08, 'square', 0.15);
+      this.progress = Math.min(100, this.progress + gain);
+      fill.style.width = this.progress + '%';
+      if (this.progress >= 10) {
+        darkLevel = 0;
+        Effects.screenDarken(0);
+      }
+      flashFoot(side);
+      shake(side);
+      pulseFx();
+      if (this.progress >= 100) this.succeed();
+    };
+
+    this._footLeftClick = () => triggerFoot('left');
+    this._footRightClick = () => triggerFoot('right');
+    this._footLeftPtr = (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      triggerFoot('left');
+    };
+    this._footRightPtr = (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      triggerFoot('right');
+    };
+    this._zoneLeftTs = (e) => { e.preventDefault(); triggerFoot('left'); };
+    this._zoneRightTs = (e) => { e.preventDefault(); triggerFoot('right'); };
+
+    footL.addEventListener('pointerdown', this._footLeftPtr);
+    footR.addEventListener('pointerdown', this._footRightPtr);
+    zoneL.addEventListener('click', this._footLeftClick);
+    zoneR.addEventListener('click', this._footRightClick);
+    zoneL.addEventListener('touchstart', this._zoneLeftTs, { passive: false });
+    zoneR.addEventListener('touchstart', this._zoneRightTs, { passive: false });
+
+    let lastSwipeX = null;
+    this.swipeTouchStart = () => { lastSwipeX = null; };
+    document.addEventListener('touchstart', this.swipeTouchStart, { passive: true });
+    this.swipeHandler = (e) => {
+      if (this._ended) return;
+      const x = e.touches[0].clientX;
+      if (lastSwipeX !== null && Math.abs(x - lastSwipeX) > 10) {
+        const dx = x - lastSwipeX;
+        triggerFoot(dx > 0 ? 'right' : 'left');
+      }
+      lastSwipeX = x;
+    };
+    document.addEventListener('touchmove', this.swipeHandler, { passive: false });
+
+    this.keyHandler = (e) => {
+      if (e.repeat) return;
+      if (e.code === 'KeyA') {
+        e.preventDefault();
+        triggerFoot('left');
+      } else if (e.code === 'KeyD') {
+        e.preventDefault();
+        triggerFoot('right');
+      }
+    };
+    document.addEventListener('keydown', this.keyHandler);
+
+    this.decayInterval = setInterval(() => {
+      if (!this._escapeActive() || this._ended) return;
+      this.progress = Math.max(0, this.progress - 1.2);
+      fill.style.width = this.progress + '%';
+      darkLevel = Math.min(0.85, darkLevel + 0.012);
+      Effects.screenDarken(darkLevel);
+    }, 200);
+  },
+
+  succeed() {
+    if (this._ended) return;
+    this._ended = true;
+    if (this._failTimeoutId) {
+      clearTimeout(this._failTimeoutId);
+      this._failTimeoutId = null;
+    }
+    this.cleanup();
+    Effects.screenDarken(0);
+    Audio.successTone();
+    const ui = document.getElementById('escape-ui');
+    ui.classList.remove('escape-ui--pretitle');
+    ui.style.display = 'none';
+    const fill = document.getElementById('escape-bar-fill');
+    if (fill) fill.style.width = '100%';
+    const fn = this._preTitleResolve;
+    this._preTitleResolve = null;
+    this._pretitleMode = false;
+    if (fn) fn('success');
+  },
+
+  fail() {
+    if (this._ended) return;
+    this._ended = true;
+    if (this._failTimeoutId) {
+      clearTimeout(this._failTimeoutId);
+      this._failTimeoutId = null;
+    }
+    this.cleanup();
+    Effects.screenDarken(0);
+    const ui = document.getElementById('escape-ui');
+    ui.classList.remove('escape-ui--pretitle');
+    ui.style.display = 'none';
+    const fn = this._preTitleResolve;
+    this._preTitleResolve = null;
+    this._pretitleMode = false;
+    if (fn) fn('fail');
+  },
+
+  cleanup() {
+    clearInterval(this.decayInterval);
+    this.decayInterval = null;
+    if (this._failTimeoutId) {
+      clearTimeout(this._failTimeoutId);
+      this._failTimeoutId = null;
+    }
+    if (this.keyHandler) { document.removeEventListener('keydown', this.keyHandler); this.keyHandler = null; }
+    if (this.swipeHandler) { document.removeEventListener('touchmove', this.swipeHandler); this.swipeHandler = null; }
+    if (this.swipeTouchStart) { document.removeEventListener('touchstart', this.swipeTouchStart); this.swipeTouchStart = null; }
+    const footL = document.getElementById('escape-foot-left');
+    const footR = document.getElementById('escape-foot-right');
+    const zoneL = document.getElementById('escape-zone-left');
+    const zoneR = document.getElementById('escape-zone-right');
+    if (footL && this._footLeftPtr) {
+      footL.removeEventListener('pointerdown', this._footLeftPtr);
+    }
+    if (footR && this._footRightPtr) {
+      footR.removeEventListener('pointerdown', this._footRightPtr);
+    }
+    if (zoneL && this._footLeftClick) {
+      zoneL.removeEventListener('click', this._footLeftClick);
+      zoneL.removeEventListener('touchstart', this._zoneLeftTs);
+    }
+    if (zoneR && this._footRightClick) {
+      zoneR.removeEventListener('click', this._footRightClick);
+      zoneR.removeEventListener('touchstart', this._zoneRightTs);
+    }
+    this._footLeftClick = this._footRightClick = this._zoneLeftTs = this._zoneRightTs = null;
+    this._footLeftPtr = this._footRightPtr = null;
+    this.tapHandler = null;
+  }
+};
+
+// ---------- S02: BATHROOM ----------
+Scenes.s02 = {
+  enter() {
+    SceneManager.setBg('bg-img bg-s02a');
+    setTimeout(() => this.showMirror(), 500);
+  },
+
+  showMirror() {
+    const mirror = document.getElementById('mirror-face');
+    mirror.style.filter = '';
+    mirror.style.transform = 'translateX(-50%)';
+    mirror.style.display = 'flex';
+
+    // Subtle mirror parallax on mouse/touch
+    const moveHandler = (e) => {
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const dx = (clientX / window.innerWidth - 0.5) * 8;
+      mirror.style.transform = `translateX(calc(-50% + ${dx}px))`;
+    };
+    document.addEventListener('mousemove', moveHandler, { passive: true });
+    document.addEventListener('touchmove', moveHandler, { passive: true });
+
+    Dialogue.show([
+      { speaker: '', text: '镜子里的你自己……脸色苍白，额头冒汗。眼神散乱，像整晚都没真正休息过。' },
+      { speaker: '', text: '宿醉。又是宿醉。但怎么……感觉有什么不对……' },
+    ], () => {
+      document.removeEventListener('mousemove', moveHandler);
+      document.removeEventListener('touchmove', moveHandler);
+      SceneManager.setBg('bg-img bg-s02b');
+      this.runBossIncomingSequence();
+    });
+  },
+
+  /** 宿醉镜中：来电镜头 → 老板通话对白 */
+  async runBossIncomingSequence() {
+    const mirror = document.getElementById('mirror-face');
+    mirror.style.filter = 'blur(1px) brightness(0.7)';
+    mirror.style.transform = 'translateX(-50%) scaleX(0.98) skewY(1deg)';
+    await PhoneShot.playLayered(1500, 'images/shot_04_v2.webp');
+    this.playCallDialogue();
+  },
+
+  playCallDialogue() {
+    // Mirror distortion effect
+    const mirror = document.getElementById('mirror-face');
+    mirror.style.filter = 'blur(1px) brightness(0.7)';
+    mirror.style.transform = 'translateX(-50%) scaleX(0.98) skewY(1deg)';
+
+    Dialogue.show([
+      { speaker: '老板', text: '喂，顾全？你赶紧滚来公司！' },
+      { speaker: '顾全', text: '……怎么了？' },
+      { speaker: '老板', text: '你被开除了，你这个程序员我们不要了。今天赶紧滚蛋。做的又慢又笨，我们现在已经有豆seek了，比你强多了！' },
+      { speaker: '顾全', text: '……什么？那n+1……' },
+      { speaker: '老板', text: '你还想要赔偿金？我不告你比不过ai都好的很了，ai要多少钱？你又要多少钱？快滚过来拿走你的东西，要不然通通给你扔了！', speed: 50 },
+      { speaker: '', text: '电话立马被挂断了。镜子里的脸，又憔悴了几分。', speed: 55 },
+      { speaker: '', text: '刚醒，你还没准备好，现实已先把你踹了出去。你只好前去地下停车场开你的车去公司。' },
+    ], () => {
+      mirror.style.filter = '';
+      mirror.style.transform = '';
+      Effects.glitch(document.getElementById('mirror-face'), 400);
+      setTimeout(() => SceneManager.go('s03'), 1500);
+    });
+  },
+
+  exit() {
+    const mirror = document.getElementById('mirror-face');
+    if (mirror) {
+      mirror.style.filter = '';
+      mirror.style.transform = 'translateX(-50%)';
+    }
+  }
+};
+
+// ---------- S03: PARKING LOT ----------
+Scenes.s03 = {
+  smellDone: false,
+
+  enter() {
+    SceneManager.setBg('bg-img bg-s03a');
+    Rain.start(0.5);
+    setTimeout(() => this.startScene(), 600);
+  },
+
+  startScene() {
+    Dialogue.show([
+      { speaker: '', text: '地下停车场。灯光稀疏。空气里有一种说不清楚的……腥。' },
+      { speaker: '', text: '你快步走向自己的车旁。但刚准备打开车门——' },
+      { speaker: '', text: '你突然停下来了。' },
+    ], () => {
+      this.setupSmell();
+    });
+  },
+
+  setupSmell() {
+    Smell.setLines([
+      { text: '烧焦味。', type: '' },
+      { text: '腐烂味。底下有什么东西腐败了。', type: 'anomaly' },
+      { text: '……这里不只你一个人。', type: 'danger' },
+    ], () => {
+      this.smellDone = true;
+      document.getElementById('progress-hint').style.display = 'none';
+      Smell.hide();
+      this.triggerStranger();
+    });
+    Smell.show();
+    document.getElementById('progress-hint').textContent = '长按「闻」感知周围';
+    document.getElementById('progress-hint').style.display = 'block';
+  },
+
+  triggerStranger() {
+    Audio.dread();
+    Effects.shake(600);
+    SceneManager.setBgCut('bg-img bg-s03b'); // 刀疤男逼近
+    Effects.horrorFlash('——有人！', 1200);
+
+    Dialogue.show([
+      { speaker: '', text: '一个男人从黑暗里跑出来——跑得很快，往这边直冲过来。' },
+      { speaker: '陌生男人', text: '我不想死！！让我上车！！', speed: 30 },
+      { speaker: '', text: '他的眼睛里只剩下恐惧。他不在乎你是谁，他只想活下去。', speed: 50 },
+      { speaker: '', text: '他抓住了你的车门把手———想要用力抢着上车。看到你在车旁挡着他，毫不犹豫的伸出一把刀刺向了你', speed: 50 },
+    ], () => {
+      this.startQTE();
+    });
+  },
+
+  startQTE() {
+    const qteEl = document.getElementById('qte-overlay');
+    const prompt = document.getElementById('qte-prompt');
+    const actions = document.getElementById('qte-actions');
+    qteEl.style.display = 'flex';
+
+    const steps = [
+      { text: '——躲开！', action: '闪避', key: 'KeyQ' },
+      { text: '他又刺了过来！', action: '格挡推开', key: 'KeyW' },
+      { text: '反击！', action: '反击', key: 'KeyE' },
+    ];
+    let stepIdx = 0;
+
+    const doStep = () => {
+      if (stepIdx >= steps.length) {
+        qteEl.style.display = 'none';
+        this.afterQTE();
+        return;
+      }
+      const step = steps[stepIdx];
+      prompt.textContent = step.text;
+      actions.innerHTML = `<button class="qte-action-btn" id="qte-main">${step.action}</button>`;
+      const btn = document.getElementById('qte-main');
+      const proceed = () => {
+        Audio.tone(400, 0.1, 'square', 0.2);
+        Effects.shake(300);
+        stepIdx++;
+        doStep();
+      };
+      btn.addEventListener('click', proceed, { once: true });
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); proceed(); }, { once: true, passive: false });
+    };
+    doStep();
+  },
+
+  afterQTE() {
+    SceneManager.setBgCut('bg-img bg-s03c'); // 冲突后残局
+    Audio.whoosh();
+    Effects.shake(800);
+
+    Dialogue.show([
+      { speaker: '', text: '男人倒下了。静寂。', speed: 60 },
+      { speaker: '', text: '你喘着气。手在抖。你只是……你只是想活下去。' },
+      { speaker: '', text: '突然——', speed: 80 }
+    ], () => {
+      SceneManager.setBgCut('bg-img bg-s04b'); // 切换到 taxi.jpg
+      Audio.whoosh();
+      Effects.shake(400);
+      Dialogue.show([
+        { speaker: '', text: '一双苍白的手打开车门将你拽了进去。', speed: 70 },
+      ], () => {
+        Audio.dread();
+        Effects.shake(600);
+        setTimeout(() => SceneManager.go('s04'), 1800);
+      });
+    });
+  },
+
+  exit() { document.getElementById('game').style.filter = ''; Rain.stop(); }
+};
+
+// ---------- S04: PAPER TAXI ----------
+Scenes.s04 = {
+  smellCount: 0,
+  passengersSmelled: 0,
+  _rulesTriggered: false,
+  _rulesTypeInterval: null,
+  _rulesCallback: null, // 规则弹窗关闭后的回调
+
+  enter() {
+    SceneManager.setBg('bg-img bg-s04a');
+    Audio.dread();
+    setTimeout(() => this.startScene(), 500);
+  },
+
+  startScene() {
+    Dialogue.show([
+      { speaker: '', text: '车厢。狭窄，压抑。空气里有纸的味道，还有腐臭味，还有什么烧过的东西。' },
+      { speaker: '', text: '车内已经坐着四个人。两男两女。每个人都盯着彼此——说不清是恐惧还是戒备。', speed: 45 },
+      { speaker: '', text: '……这是去哪里的车？这些又是什么人？为什么都在你的车上？你疑惑的想。' },
+    ], () => {
+      this.showPassengers();
+    });
+  },
+
+  showPassengers() {
+    const container = document.getElementById('taxi-passengers');
+    const hint = document.getElementById('progress-hint');
+    container.innerHTML = '';
+    container.style.display = 'none';
+
+    Smell.setLines([
+      { text: '汗、药、铁锈、香粉的味道挤在一起。', type: '' },
+      { text: '四个人都在怕。怕的却不是同一样东西。', type: 'anomaly' },
+      { text: '其中一个人，已经准备好把别人推出去。', type: 'danger' },
+      { text: '这辆车上，没有真正安全的人。', type: 'danger' },
+    ], () => {
+      if (State.scene !== 's04') return;
+      hint.style.display = 'none';
+      Smell.hide();
+      this.cognitiveCollapse();
+    });
+    Smell.show();
+    hint.textContent = '长按「闻」感知车里四个人';
+    hint.style.display = 'block';
+  },
+
+  triggerRules(callback) {
+    if (this._rulesTriggered) return;
+    this._rulesCallback = callback || null; // 保存弹窗关闭后的回调
+    SceneManager.setBg('bg-img bg-s05a');
+    this._rulesTriggered = true;
+    try { Audio.tone(200, 0.12, 'sine', 0.08); } catch (e) {}
+    Effects.shake(400);
+    Smell.hide();
+    const taxiEl = document.getElementById('taxi-passengers');
+    taxiEl.innerHTML = '';
+    taxiEl.style.display = 'none';
+    taxiEl.style.opacity = '';
+    taxiEl.style.pointerEvents = '';
+    document.getElementById('progress-hint').style.display = 'none';
+
+    RulesMobileUi.open();
+    RulesMobileUi.setTitle('规则更新');
+    const rulesText = document.getElementById('rules-mobile-body');
+    const confirmBtn = document.getElementById('rules-mobile-confirm');
+    if (confirmBtn) {
+      confirmBtn.style.display = 'none';
+      confirmBtn.onclick = null;
+    }
+    if (rulesText) rulesText.textContent = '';
+
+    const rules = [
+      '「请在林中小屋活过四十八小时。」',
+      '',
+      '「每次离开林中小屋的时间，不超过三十分钟。」',
+    ];
+    const full = rules.join('\n');
+    let text = '';
+    let i = 0;
+    if (this._rulesTypeInterval) clearInterval(this._rulesTypeInterval);
+    const self = this;
+    this._rulesTypeInterval = setInterval(() => {
+      if (i < full.length) {
+        text += full[i++];
+        if (rulesText) rulesText.textContent = text;
+      } else {
+        clearInterval(self._rulesTypeInterval);
+        self._rulesTypeInterval = null;
+        if (confirmBtn) {
+          confirmBtn.style.display = 'block';
+          const hintEl = document.getElementById('rules-mobile-hint');
+          if (hintEl) {
+            hintEl.textContent = '轻触继续';
+            hintEl.style.display = 'block';
+          }
+          confirmBtn.onclick = () => {
+            confirmBtn.onclick = null;
+            if (hintEl) {
+              hintEl.style.display = 'none';
+              hintEl.textContent = '';
+            }
+            RulesMobileUi.hide();
+            self.applyRulesAck();
+          };
+        }
+      }
+    }, 60);
+  },
+
+  applyRulesAck() {
+    Notebook.unlock();
+    Notebook.addRule('规则一', '在林中小屋活过四十八小时');
+    Notebook.addRule('规则二', '每次离开小屋不超过三十分钟');
+    Notebook.addObservation('观察', '同行者暂时需要合作，但不可信');
+    // 如果有回调则执行回调（下车场景），否则执行原有逻辑
+    if (this._rulesCallback) {
+      const cb = this._rulesCallback;
+      this._rulesCallback = null;
+      setTimeout(cb, 450);
+    } else {
+      setTimeout(() => this.cognitiveCollapse(), 450);
+    }
+  },
+
+  cognitiveCollapse() {
+    Effects.shake(600);
+    Audio.dread();
+    SceneManager.setBgCut('bg-img bg-s04c'); // 后视镜黑影
+
+    Dialogue.show([
+      { speaker: '', text: '……等等。后视镜里面是什么东西，刚才那个人身上是什么怪物……', speed: 80 },
+      { speaker: '', text: '你盯着车窗外的黑暗。脑子里有什么东西在松动。', speed: 50 },
+      { speaker: '', text: '你忽然意识到，你打工这么多年根本没有属于自己的车。', speed: 70 },
+      { speaker: '', text: '你从来就没有车。', speed: 70 },
+      { speaker: '', text: '……那我坐的是谁的……？', speed: 60 },
+    ], () => {
+        SceneManager.setBgCut('bg-img bg-s04d'); // 驾驶位空镜
+        Dialogue.show([
+          { speaker: '', text: '你—看向车的最前方———驾驶位，怎么什么都没有！', speed: 55 },
+          { speaker: '', text: '没有司机？！', speed: 90 },
+          { speaker: '', text: '并且你发现这竟然是一辆真正的纸车', speed: 70 },
+        ], () => {
+          // 下车前拦截：先弹出规则更新，确认后再进入下一场景
+          this.triggerRules(() => {
+            setTimeout(() => SceneManager.go('s05'), 1500);
+          });
+        });
+      });
+  },
+
+  exit() {
+    if (this._rulesTypeInterval) {
+      clearInterval(this._rulesTypeInterval);
+      this._rulesTypeInterval = null;
+    }
+    this._rulesTriggered = false;
+    this.passengersSmelled = 0;
+    const taxiEl = document.getElementById('taxi-passengers');
+    taxiEl.innerHTML = '';
+    taxiEl.style.display = 'none';
+    taxiEl.style.opacity = '';
+    taxiEl.style.pointerEvents = '';
+    RulesMobileUi.resetAll();
+  }
+};
+
+// ---------- S05: CABIN EXTERIOR ----------
+Scenes.s05 = {
+  groundSmellDone: false,
+  trapTriggered: false,
+  boySmellCount: 0,
+
+  enter() {
+    SceneManager.setBg('bg-img bg-s05a');
+    setTimeout(() => this.startScene(), 500);
+  },
+
+  startScene() {
+    Dialogue.show([
+      { speaker: '', text: '当你冷汗直流时，纸车慢慢停了下来，你们下了车——如果那东西还算是车的话。' },
+      { speaker: '', text: '四周是一片漆黑的荒野。气温极低。风很轻，但冷。静得不正常。' },
+      { speaker: '', text: '前方，一间陌生的木屋。' },
+      { speaker: '', text: '你刚靠近木屋，就先停下来了。好像闻到了什么……' },
+    ], () => {
+      this.groundSmell();
+    });
+  },
+
+  groundSmell() {
+    Smell.setLines([
+      { text: '冷。', type: '' },
+      { text: '土腥味很重。', type: 'anomaly' },
+      { text: '这里被动过。', type: 'anomaly' },
+      { text: '下面有金属冷味。', type: 'danger' },
+    ], () => {
+      this.groundSmellDone = true;
+      document.getElementById('progress-hint').style.display = 'none';
+      Smell.hide();
+      this.showGroundActions();
+    });
+    Smell.show();
+    document.getElementById('progress-hint').textContent = '长按「闻」';
+    document.getElementById('progress-hint').style.display = 'block';
+  },
+
+  showGroundActions() {
+    const probe = document.getElementById('ground-probe');
+    probe.classList.add('ground-probe--smell-slot');
+    probe.style.display = 'flex';
+    probe.innerHTML = `
+      <button class="ground-action-btn" id="look-ground-btn">观察地面</button>
+      <button class="ground-action-btn" id="throw-stone-btn" style="display:none">丢石头试探</button>
+    `;
+    document.getElementById('look-ground-btn').addEventListener('click', () => {
+      Dialogue.show([
+        { speaker: '', text: '地面上盖着一些散落的树叶和干土。太平整了——不像是自然堆积的。', speed: 50 },
+        { speaker: '', text: '有人动过这里的土。', speed: 60 },
+      ], () => {
+        document.getElementById('throw-stone-btn').style.display = 'block';
+        document.getElementById('look-ground-btn').style.display = 'none';
+      });
+    }, { once: true });
+
+    document.getElementById('throw-stone-btn').addEventListener('click', () => {
+      probe.style.display = 'none';
+      probe.classList.remove('ground-probe--smell-slot');
+      Smell.hide();
+      this.triggerTrap();
+    }, { once: true });
+  },
+
+  triggerTrap() {
+    Audio.metalClang();
+    Effects.shake(700);
+    SceneManager.setBgCut('bg-img bg-s05b'); // 捕兽夹触发
+    Effects.horrorFlash('咔\n嚓', 900);
+
+    Dialogue.show([
+      { speaker: '', text: '石头落下的瞬间——', speed: 80 },
+      { speaker: '', text: '咔嚓。', speed: 120 },
+      { speaker: '', text: '捕兽夹从泥土里弹起来，合拢的声音在黑暗里回荡。', speed: 50 },
+      { speaker: '', text: '门口埋着捕兽夹。', speed: 60 },
+      { speaker: '', text: '你退了半步。', speed: 80 },
+    ], () => {
+      this.trapTriggered = true;
+      this.openDoor();
+    });
+  },
+
+  openDoor() {
+    Dialogue.show([
+      { speaker: '', text: '铁声停止之后，是更长的沉默。', speed: 55 },
+      { speaker: '', text: '这时候，木门从里面缓缓开了。', speed: 65 },
+    ], () => {
+      SceneManager.setBgCut('bg-img bg-s05c'); // 门口出现小孩 shot_15.png
+      this.showBoy();
+    });
+  },
+
+  showBoy() {
+    const content = document.getElementById('scene-content');
+    content.innerHTML = '';
+
+    Dialogue.show([
+      { speaker: '小璐', text: '叔叔阿姨，你们终于来啦。' },
+      { speaker: '小璐', text: '我们等你们好久了。' },
+      { speaker: '', text: '一个小男孩站在门后。看起来天真、礼貌，甚至有些乖巧。', speed: 50 },
+      { speaker: '', text: '但就在这个瞬间，你仿佛「闻」到了一丝不对劲。', speed: 50 },
+    ], () => {
+      this.smellBoy();
+    });
+  },
+
+  smellBoy() {
+    Smell.setLines([
+      { text: '太淡了。', type: '' },
+      { text: '闻不到正常孩子该有的层次。', type: 'anomaly' },
+      { text: '像是刻意留下来的「孩子味」……但底下是空的。', type: 'danger' },
+    ], () => {
+      this.boySmellCount = 3;
+      Notebook.addObservation('小璐异常', '气味层次不对。像刻意留下的孩子气息，底下是空的。');
+      document.getElementById('progress-hint').style.display = 'none';
+      Smell.hide();
+      this.enterCabin();
+    });
+    Smell.show();
+    document.getElementById('progress-hint').textContent = '长按「闻」';
+    document.getElementById('progress-hint').style.display = 'block';
+
+    // Auto-progress after some time
+    setTimeout(() => {
+      if (State.scene === 's05' && this.boySmellCount < 3) {
+        Smell.hide();
+        document.getElementById('progress-hint').style.display = 'none';
+        this.enterCabin();
+      }
+    }, 10000);
+  },
+
+  enterCabin() {
+    Dialogue.show([
+      { speaker: '', text: '小璐有着说不出的诡异。', speed: 60 },
+      { speaker: '', text: '但没有人能说出。', speed: 70 },
+      { speaker: '', text: '众人跟着小璐进了木屋。', speed: 60 },
+    ], () => {
+      SceneManager.go('s06');
+    });
+  },
+
+  exit() {
+    this.groundSmellDone = false;
+    this.trapTriggered = false;
+    this.boySmellCount = 0;
+  }
+};
+
+// ---------- S06: CABIN INTERIOR ----------
+Scenes.s06 = {
+  exploredCount: 0,
+
+  enter() {
+    this._boyTalked = false;
+    SceneManager.setBg('bg-img bg-s06');
+    setTimeout(() => this.runCabinIntroLens(), 480);
+  },
+
+  /** 进屋后先给对峙近景镜头（scene-lens），再对白，再探索 */
+  async runCabinIntroLens() {
+    if (State.scene !== 's06') return;
+    SceneManager.setBg('bg-img bg-s06b');
+    await new Promise((r) => setTimeout(r, 2800));
+    if (State.scene !== 's06') return;
+    SceneManager.setBg('bg-img bg-s06');
+    this.startScene();
+  },
+
+  startScene() {
+    Dialogue.show([
+      { speaker: '', text: '木屋内部。旧木墙，昏黄的光，壁炉里还有一点余火。', speed: 50 },
+      { speaker: '', text: '太像一个正常的生活空间了——但这反而不正常。东西都在，摆放得像是被提前整理过。', speed: 45 },
+      { speaker: '小璐', text: '叔叔阿姨，这里就是我家了。你们可以到处看看。' },
+    ], () => {
+      this.setupHotspots();
+    });
+  },
+
+  setupHotspots() {
+    const ambientLines = [
+      { text: '木脂、陈灰、还有洗不掉的腥甜缠在一起。', type: '' },
+      { text: '空间被收拾得太「干净」——气味却在墙角发潮。', type: 'anomaly' },
+      { text: '有人在等你们适应这里。', type: 'danger' },
+    ];
+    Smell.setLines(ambientLines, () => {
+      document.getElementById('progress-hint').style.display = 'none';
+      Smell.hide();
+      this.boyDialogue();
+    });
+    Smell.show();
+    document.getElementById('progress-hint').textContent = '长按「闻」';
+    document.getElementById('progress-hint').style.display = 'block';
+  },
+
+  boyDialogue() {
+    if (this._boyTalked) return;
+    this._boyTalked = true;
+    document.getElementById('cabin-hotspots').style.display = 'none';
+    document.getElementById('progress-hint').style.display = 'none';
+    Smell.hide();
+
+    Dialogue.show([
+      { speaker: '小璐', text: '叔叔阿姨饿不饿？家里有东西可以做饭的。' },
+      { speaker: '刀疤男', text: '……行，那就做饭吧。谁去捡柴？' },
+      { speaker: '小璐', text: '爸爸妈妈出门了，就我在家。', speed: 55 },
+      { speaker: '', text: '等等。他进门前明明说"我们等你们好久了"——', speed: 55 },
+      { speaker: '', text: '现在又说"就我一个人在家"。', speed: 60 },
+      { speaker: '', text: '……所以等待众人的究竟是……？', speed: 65 },
+    ], () => {
+      this.taskDivision();
+    });
+  },
+
+  taskDivision() {
+    const choicePanel = document.getElementById('choice-panel');
+    choicePanel.style.display = 'flex';
+    choicePanel.innerHTML = `
+      <div style="font-size:11px;letter-spacing:3px;color:var(--gray-mid);text-align:center;margin-bottom:4px">——任务分工——</div>
+      <button class="choice-btn" id="choice-stay">留下来看孩子</button>
+      <button class="choice-btn" id="choice-cook">帮忙做饭</button>
+      <button class="choice-btn" id="choice-wood">出去捡柴</button>
+    `;
+
+    // All lead to same outcome
+    ['stay','cook','wood'].forEach(c => {
+      document.getElementById(`choice-${c}`).addEventListener('click', () => {
+      choicePanel.style.display = 'none';
+        this.fixedOutcome();
+      }, { once: true });
+    });
+  },
+
+  fixedOutcome() {
+    Dialogue.show([
+      { speaker: '', text: '最后——无论如何，你和刀疤男一起出门捡柴。', speed: 50 },
+      { speaker: '', text: '这间屋子里的事，暂时交给其他人。', speed: 55 },
+      { speaker: '', text: '小璐送你们两到门口，用那双让人说不清楚的眼睛，默默看着。', speed: 50 },
+    ], () => {
+      SceneManager.go('s07', { phase: 1 });
+    });
+  },
+
+  exit() {
+    this._boyTalked = false;
+  }
+};
+
+// ---------- S07: DEEP FOREST ----------
+Scenes.s07 = {
+  phase: 1,
+  breathHeld: false,
+  breathTimer: null,
+  breathProgress: 0,
+  breathInterval: null,
+  _breathEnded: false,
+  /** S07 第二段：10 秒自动出选项的定时器，必须在重试/离开场景时清空，否则会重复触发 showPathChoice */
+  _phase2AutoTimer: null,
+  /** 已为「土味变了」这一段展示过路径面板（防 Smell 完成回调 + 10s 兜底各调一次） */
+  _pathChoiceShown: false,
+  /** 丢石子验证陷阱长对白已进入过且应进入 phase3（防 correctPath 双播） */
+  _stoneTrapResolved: false,
+
+  _clearPhase2AutoTimer() {
+    if (this._phase2AutoTimer) {
+      clearTimeout(this._phase2AutoTimer);
+      this._phase2AutoTimer = null;
+    }
+  },
+
+  enter(data) {
+    this.phase = (data && data.phase) || 1;
+    this._breathEnded = false;
+    this._pathChoiceShown = false;
+    this._stoneTrapResolved = false;
+    this._clearPhase2AutoTimer();
+    SceneManager.setBg('bg-img bg-s07a');
+    Rain.start(0.25);
+    setTimeout(() => this.phase1(), 500);
+  },
+
+  phase1() {
+    Dialogue.show([
+      { speaker: '', text: '林间。夜色。寒风。' },
+      { speaker: '', text: '你和刀疤男在木屋外的林子里捡柴。手电的光，在树丛间打出一块狭窄的亮斑。', speed: 45 },
+      { speaker: '刀疤男', text: '门那边记住了吧——那几块树叶下面不能踩。' },
+      { speaker: '顾全', text: '嗯。知道了。', speed: 60 },
+    ], () => {
+      SceneManager.setBgCut('bg-img bg-s07_chop');
+      Dialogue.show([
+        { speaker: '', text: '你们谨慎地绕开几处可疑区域。一轮过后，抱了柴进屋。', speed: 50 },
+        { speaker: '', text: '然后要再出来拿第二趟。', speed: 65 },
+        { speaker: '', text: '刀疤男拍了拍你的肩：', speed: 60 },
+        { speaker: '刀疤男', text: '按刚才的路走，没事的。记住了嘛。但一种怪味突然充斥着你的鼻腔……' },
+      ], () => {
+        this.phase2();
+      });
+    });
+  },
+
+  phase2() {
+    if (this._stoneTrapResolved) return;
+
+    this._clearPhase2AutoTimer();
+    this._pathChoiceShown = false;
+
+    Smell.setLines([
+      { text: '不对。', type: '' },
+      { text: '土味变了。', type: 'anomaly' },
+      { text: '叶子被动过。', type: 'danger' },
+      { text: '它在利用你记住的东西。', type: 'danger' },
+    ], () => {
+      if (State.scene !== 's07' || this._pathChoiceShown || this._stoneTrapResolved) return;
+      this.showPathChoice();
+    });
+    Smell.show();
+    document.getElementById('progress-hint').textContent = '长按「闻」';
+    document.getElementById('progress-hint').style.display = 'block';
+
+    this._phase2AutoTimer = setTimeout(() => {
+      this._phase2AutoTimer = null;
+      if (State.scene !== 's07' || this._pathChoiceShown || this._stoneTrapResolved) return;
+      Smell.hide();
+      document.getElementById('progress-hint').style.display = 'none';
+      this.showPathChoice();
+    }, 10000);
+  },
+
+  showPathChoice() {
+    if (this._pathChoiceShown || this._stoneTrapResolved) return;
+    this._pathChoiceShown = true;
+    this._clearPhase2AutoTimer();
+
+    Smell.hide();
+    document.getElementById('progress-hint').style.display = 'none';
+    Effects.horrorFlash('土味\n不对', 1400);
+
+    const pathChoice = document.getElementById('path-choice');
+    pathChoice.innerHTML = '';
+    pathChoice.style.display = 'flex';
+    pathChoice.innerHTML = `
+      <div style="font-size:11px;letter-spacing:3px;color:var(--gray-mid);text-align:center;margin-bottom:8px">土味变了——树叶位置被动过</div>
+      <button class="path-btn danger-path" id="follow-old">按刚才记住的路线走</button>
+      <button class="path-btn safe-path" id="re-evaluate">重新判断</button>
+    `;
+
+    const followOld = document.getElementById('follow-old');
+    const reEval = document.getElementById('re-evaluate');
+    followOld.addEventListener('click', () => {
+      pathChoice.style.display = 'none';
+      this.wrongPath();
+    }, { once: true });
+
+    reEval.addEventListener('click', () => {
+      pathChoice.style.display = 'none';
+      State.correctChoices++;
+      this.correctPath();
+    }, { once: true });
+  },
+
+  wrongPath() {
+    this._clearPhase2AutoTimer();
+
+    Audio.metalClang();
+    Effects.shake(800);
+
+    const failScreen = document.getElementById('fail-screen');
+    failScreen.style.display = 'flex';
+    failScreen.style.visibility = '';
+    document.getElementById('fail-text').textContent = '你不是输给未知。\n你是输给了你以为自己已经知道。';
+    document.getElementById('fail-text').style.whiteSpace = 'pre-line';
+    document.getElementById('fail-sub').textContent = '陷阱位置已被调换。记忆成了最危险的东西。';
+
+    document.getElementById('fail-retry-btn').addEventListener('click', () => {
+      failScreen.style.display = 'none';
+      this._pathChoiceShown = false;
+      this.showPathChoice();
+    }, { once: true });
+  },
+
+  correctPath() {
+    if (this._stoneTrapResolved) return;
+    this._stoneTrapResolved = true;
+    this._clearPhase2AutoTimer();
+
+    Dialogue.show([
+      { speaker: '', text: '你停下来了。', speed: 70 },
+      { speaker: '刀疤男', text: '怎么了？' },
+      { speaker: '顾全', text: '树叶……和刚才不一样。', speed: 60 },
+      { speaker: '', text: '你捡起一块石子，丢向原先记住的"安全位置"——', speed: 50 },
+    ], () => {
+      if (State.scene !== 's07') return;
+      SceneManager.setBgCut('bg-img bg-s07d'); // 提前切换到捕兽夹 catch.jpg
+      Audio.metalClang();
+      Effects.shake(500);
+      Audio.successTone();
+      Dialogue.show([
+        { speaker: '', text: '咔嚓。', speed: 120 },
+        { speaker: '', text: '捕兽夹。就在那里。原来的"安全"路线，已经成了陷阱。', speed: 50 },
+        { speaker: '刀疤男', text: '……靠。', speed: 80 },
+        { speaker: '', text: '你们重新绕了一条路，确认安全之后，继续往林子深处走。', speed: 50 },
+        { speaker: '', text: '正确的判断，换来的不是安心——而是更深的恐惧。', speed: 50 },
+        { speaker: '', text: '它会依照你正常的认知不断引入你进入深渊——', speed: 55 },
+      ], () => {
+        Notebook.addObservation('重要发现', '诡异会根据你的判断调整陷阱位置。记忆本身可能成为陷阱。');
+        this.phase3();
+      });
+    });
+  },
+
+  phase3() {
+    SceneManager.setBg('bg-img bg-s07b'); // 单人剪影图 shot_19.png
+    Dialogue.show([
+      { speaker: '', text: '林子越来越深。越来越静。', speed: 60 },
+      { speaker: '', text: '手电的光圈在收窄。', speed: 70 },
+      { speaker: '', text: '刀疤男的呼喊声——', speed: 80 },
+      { speaker: '', text: '越来越远。', speed: 90 },
+      { speaker: '', text: '你在某个时刻意识到，你不知道从什么时候开始，周围只剩下你一个人了。', speed: 45 },
+    ], () => {
+      this.lonelyMoment();
+    });
+  },
+
+  lonelyMoment() {
+    SceneManager.setBg('bg-img bg-s07e'); // forset.png
+    Audio.dread();
+    Effects.screenDarken(0.4);
+
+    // Narrow the screen with vignette
+    document.getElementById('vignette').style.background =
+      'radial-gradient(ellipse 45% 55% at 50% 50%, transparent 20%, rgba(0,0,0,0.95) 100%)';
+
+    setTimeout(() => {
+      Effects.fadeToBlack(800).then(() => {
+        Effects.fadeFromBlack(400).then(() => {
+          this.boyVoice();
+        });
+      });
+    }, 2000);
+  },
+
+  boyVoice() {
+    const boyDial = document.getElementById('boy-dialogue');
+    const boyText = document.getElementById('boy-dialogue-text');
+    boyDial.style.display = 'block';
+
+    let text = '';
+    const msg = '只有一个人的时候，姐姐才会出现哦！';
+    let i = 0;
+    const typeInterval = setInterval(() => {
+      if (i < msg.length) {
+        text += msg[i++];
+        boyText.textContent = text;
+      } else {
+        clearInterval(typeInterval);
+        setTimeout(() => {
+          this.showLonelyEndingLunge();
+        }, 2500);
+      }
+    }, 80);
+  },
+
+  async showLonelyEndingLunge() {
+    const titleScreen = document.getElementById('title-screen');
+    const seq = document.getElementById('opening-sequence');
+    const stack = document.getElementById('opening-stack');
+    const blur = document.getElementById('opening-blur');
+    const shot = document.getElementById('opening-shot');
+    const brand = document.getElementById('title-brand');
+    const warning = document.getElementById('title-warning');
+    const failScreen = document.getElementById('fail-screen');
+    const retryBtn = document.getElementById('fail-retry-btn');
+    const boyDial = document.getElementById('boy-dialogue');
+
+    if (!titleScreen || !seq || !stack || !blur || !shot || !brand || !failScreen || !retryBtn) {
+      this.showLonelyEndingScreen();
+      return;
+    }
+
+    Audio.alert();
+    Audio.heartbeat(2);
+    Effects.shake(700);
+    boyDial.style.display = 'none';
+    document.getElementById('footstep-indicator').style.display = 'none';
+
+    failScreen.style.display = 'flex';
+    failScreen.style.visibility = '';
+    failScreen.style.opacity = '0';
+    failScreen.style.pointerEvents = 'none';
+    failScreen.style.transition = 'opacity 0.9s ease';
+    document.getElementById('fail-text').textContent = '呼吸声出卖了你。\n它来了。';
+    playJumpscare();
+    document.getElementById('fail-text').style.whiteSpace = 'pre-line';
+    document.getElementById('fail-sub').textContent = '屏息失败。姐姐锁定了你的位置。';
+    retryBtn.onclick = () => {
+      retryBtn.onclick = null;
+      restartToBeginning();
+    };
+
+    brand.classList.remove('title-brand--visible');
+    brand.style.display = 'none';
+    if (warning) warning.style.opacity = '0';
+
+    titleScreen.style.display = 'flex';
+    titleScreen.style.opacity = '1';
+    titleScreen.style.transition = '';
+    titleScreen.style.pointerEvents = 'none';
+    titleScreen.classList.remove('title-phase-brand', 'title-screen--under-pretitle');
+
+    seq.style.display = 'flex';
+    seq.setAttribute('aria-hidden', 'false');
+    seq.classList.remove('opening--develop', 'opening--shock', 'opening--exit');
+    stack.style.opacity = '1';
+
+    blur.style.opacity = '0.82';
+    blur.style.filter = 'blur(40px) brightness(0.2) saturate(0.7)';
+    blur.style.transform = 'scale(1.08)';
+    shot.style.opacity = '1';
+    shot.style.filter = 'brightness(1.02) contrast(1.08) saturate(1.02)';
+    shot.style.transform = 'scale(1.09) translateY(-1%)';
+
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          seq.classList.add('opening--shock');
+          resolve();
+        });
+      });
+    });
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    seq.classList.remove('opening--shock');
+    await new Promise((resolve) => setTimeout(resolve, 650));
+
+    titleScreen.style.transition = 'opacity 0.9s ease';
+    requestAnimationFrame(() => {
+      titleScreen.style.opacity = '0';
+      failScreen.style.opacity = '1';
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 920));
+
+    titleScreen.style.display = 'none';
+    titleScreen.style.pointerEvents = '';
+    titleScreen.style.transition = 'opacity 0.55s ease';
+    seq.style.display = 'none';
+    seq.setAttribute('aria-hidden', 'true');
+    failScreen.style.pointerEvents = '';
+
+    blur.style.opacity = '';
+    blur.style.filter = '';
+    blur.style.transform = '';
+    shot.style.opacity = '';
+    shot.style.filter = '';
+    shot.style.transform = '';
+    if (warning) warning.style.opacity = '';
+  },
+
+  showLonelyEndingScreen() {
+    const failScreen = document.getElementById('fail-screen');
+    const retryBtn = document.getElementById('fail-retry-btn');
+    failScreen.style.display = 'flex';
+    failScreen.style.visibility = '';
+    failScreen.style.opacity = '';
+    failScreen.style.pointerEvents = '';
+    document.getElementById('fail-text').textContent = '呼吸声出卖了你。\n它来了。';
+    playJumpscare();
+    document.getElementById('fail-text').style.whiteSpace = 'pre-line';
+    document.getElementById('fail-sub').textContent = '屏息失败。姐姐锁定了你的位置。';
+    retryBtn.onclick = () => {
+      retryBtn.onclick = null;
+      restartToBeginning();
+    };
+  },
+
+  finalWarning() {
+    Audio.alert();
+    Effects.shake(500);
+
+    document.getElementById('footstep-indicator').style.display = 'block';
+
+    const boyDial = document.getElementById('boy-dialogue');
+    const boyText = document.getElementById('boy-dialogue-text');
+    boyDial.style.display = 'block';
+    boyText.style.color = 'rgba(220,60,60,0.95)';
+    boyText.style.fontSize = 'clamp(18px,5vw,28px)';
+    boyText.textContent = '';
+
+    let text = '';
+    const msg = '它闻到你了！！！';
+    let i = 0;
+    const typeInterval = setInterval(() => {
+      if (i < msg.length) {
+        text += msg[i++];
+        boyText.textContent = text;
+        Audio.tone(200 + i * 10, 0.05, 'sawtooth', 0.1);
+      } else {
+        clearInterval(typeInterval);
+        Audio.heartbeat(3);
+        setTimeout(() => {
+          boyDial.style.display = 'none';
+          this.breathingMechanic();
+        }, 1500);
+      }
+    }, 100);
+  },
+
+  breathingMechanic() {
+    this.cleanupBreath();
+
+    document.getElementById('footstep-indicator').style.display = 'none';
+    document.getElementById('vignette').style.background =
+      'radial-gradient(ellipse 50% 50% at 50% 50%, transparent 20%, rgba(0,0,0,0.92) 100%)';
+
+    const ui = document.getElementById('breath-ui');
+    ui.style.display = 'flex';
+    ui.style.opacity = '';
+    ui.style.pointerEvents = '';
+    ui.style.zIndex = '200';
+
+    let breathLevel = 50;
+    const fill = document.getElementById('breath-meter-fill');
+    const center = document.getElementById('breath-center');
+    const btn = document.getElementById('breath-hold-btn');
+
+    const updateBreath = () => {
+      if (fill) fill.style.width = breathLevel + '%';
+    };
+    updateBreath();
+
+    this._breathHolding = false;
+    this.breathInterval = setInterval(() => {
+      breathLevel = Math.min(100, breathLevel + 0.8);
+      updateBreath();
+      if (breathLevel >= 100) {
+        this.breathFail();
+      }
+    }, 100);
+
+    this._breathPtrDown = (e) => {
+      if (e) e.preventDefault();
+      this._breathHolding = true;
+      btn.classList.add('held');
+      center.classList.add('stable');
+      try { Audio.tone(80, 0.5, 'sine', 0.15); } catch (err) {}
+      if (!this.breathHoldInterval) {
+        this.breathHoldInterval = setInterval(() => {
+          if (this._breathHolding) {
+            breathLevel = Math.max(0, breathLevel - 2.5);
+            updateBreath();
+            if (breathLevel <= 0) {
+              this.breathSucceed();
+            }
+          }
+        }, 100);
+      }
+    };
+
+    this._breathPtrUp = () => {
+      this._breathHolding = false;
+      btn.classList.remove('held');
+      center.classList.remove('stable');
+    };
+
+    btn.addEventListener('mousedown', this._breathPtrDown);
+    btn.addEventListener('touchstart', this._breathPtrDown, { passive: false });
+    btn.addEventListener('mouseup', this._breathPtrUp);
+    btn.addEventListener('mouseleave', this._breathPtrUp);
+    btn.addEventListener('touchend', this._breathPtrUp);
+    btn.addEventListener('touchcancel', this._breathPtrUp);
+
+    this.breathKeyHandler = (e) => {
+      if (e.code === 'Space') {
+        if (e.repeat) return; // 防止长按空格重复触发
+        e.preventDefault();
+        if (e.type === 'keydown') this._breathPtrDown(null);
+        else this._breathPtrUp();
+      }
+    };
+    document.addEventListener('keydown', this.breathKeyHandler);
+    document.addEventListener('keyup', this.breathKeyHandler);
+  },
+
+  retryBreathPhase() {
+    const tr = document.getElementById('transition');
+    if (tr) tr.classList.remove('fade-in');
+    const failScreen = document.getElementById('fail-screen');
+    failScreen.style.display = 'none';
+    failScreen.style.pointerEvents = 'none';
+    failScreen.style.visibility = 'hidden';
+    this._breathEnded = false;
+    this.cleanupBreath();
+    const fill = document.getElementById('breath-meter-fill');
+    if (fill) fill.style.width = '50%';
+    requestAnimationFrame(() => {
+      failScreen.style.visibility = '';
+      failScreen.style.pointerEvents = '';
+      this.breathingMechanic();
+    });
+  },
+
+  breathFail() {
+    if (this._breathEnded) return;
+    this._breathEnded = true;
+    this.cleanupBreath();
+    Effects.shake(800);
+    Audio.dread();
+
+    const failScreen = document.getElementById('fail-screen');
+    failScreen.style.display = 'flex';
+    failScreen.style.visibility = '';
+    failScreen.style.opacity = '';
+    failScreen.style.pointerEvents = '';
+    document.getElementById('fail-text').textContent = '呼吸声出卖了你。\n它来了。';
+    playJumpscare();
+    document.getElementById('fail-text').style.whiteSpace = 'pre-line';
+    document.getElementById('fail-sub').textContent = '屏息失败。姐姐锁定了你的位置。';
+
+    document.getElementById('fail-retry-btn').addEventListener('click', () => {
+      this.retryBreathPhase();
+    }, { once: true });
+  },
+
+  breathSucceed() {
+    if (this._breathEnded) return;
+    this._breathEnded = true;
+    this.cleanupBreath();
+    State.breathSuccess = true;
+    State.correctChoices++;
+    Audio.successTone();
+
+    document.getElementById('breath-ui').style.display = 'none';
+    document.getElementById('vignette').style.background =
+      'radial-gradient(ellipse 70% 70% at 50% 50%, transparent 40%, rgba(0,0,0,0.8) 100%)';
+
+    Dialogue.show([
+      { speaker: '', text: '……它走了。', speed: 80 },
+      { speaker: '', text: '顾全不知道自己屏住了多久。手脚都在发抖。', speed: 50 },
+      { speaker: '', text: '但还活着。', speed: 80 },
+      { speaker: '', text: '（还活着。）', speed: 80 },
+    ], () => {
+      this.chapterEnd();
+    });
+  },
+
+  chapterEnd() {
+    Effects.fadeToBlack(1000).then(() => {
+      document.getElementById('breath-ui').style.display = 'none';
+      this.showEndScreen();
+      Effects.fadeFromBlack(1500);
+    });
+  },
+
+  showEndScreen() {
+    const endScreen = document.getElementById('end-screen');
+    endScreen.style.display = 'flex';
+    document.getElementById('end-text').textContent = '他明白了一件事——\n\n这个地方有规则。\n规则压着他，也保护他。\n\n但知道规则，并不代表能活下去。';
+    document.getElementById('end-text').style.whiteSpace = 'pre-line';
+
+    const stats = document.getElementById('end-stats');
+    stats.innerHTML = `
+      <div class="end-stat"><span>正确判断</span><span>${State.correctChoices} 次</span></div>
+      <div class="end-stat"><span>屏息自救</span><span>${State.breathSuccess ? '成功' : '——'}</span></div>
+      <div class="end-stat"><span>手记条目</span><span>${document.querySelectorAll('.notebook-rule,.notebook-observation').length} 条</span></div>
+    `;
+  },
+
+  cleanupBreath() {
+    clearInterval(this.breathInterval);
+    clearInterval(this.breathHoldInterval);
+    this.breathInterval = null;
+    this.breathHoldInterval = null;
+    this._breathHolding = false;
+
+    const btn = document.getElementById('breath-hold-btn');
+    const center = document.getElementById('breath-center');
+    if (btn && this._breathPtrDown) {
+      btn.removeEventListener('mousedown', this._breathPtrDown);
+      btn.removeEventListener('touchstart', this._breathPtrDown);
+      btn.removeEventListener('mouseup', this._breathPtrUp);
+      btn.removeEventListener('mouseleave', this._breathPtrUp);
+      btn.removeEventListener('touchend', this._breathPtrUp);
+      btn.removeEventListener('touchcancel', this._breathPtrUp);
+    }
+    this._breathPtrDown = null;
+    this._breathPtrUp = null;
+    if (center) center.classList.remove('stable');
+    if (btn) btn.classList.remove('held');
+
+    if (this.breathKeyHandler) {
+      document.removeEventListener('keydown', this.breathKeyHandler);
+      document.removeEventListener('keyup', this.breathKeyHandler);
+      this.breathKeyHandler = null;
+    }
+    const bu = document.getElementById('breath-ui');
+    if (bu) bu.style.zIndex = '';
+  },
+
+  exit() {
+    this._clearPhase2AutoTimer();
+    this.cleanupBreath();
+    Rain.stop();
+    document.getElementById('vignette').style.background = '';
+  }
+};
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  Dialogue.addClickListener();
+  Smell.attachEvents();
+  Notebook.init();
+  Rain.init();
+  document.getElementById('hud').style.display = 'none';
+  SceneLens.hide();
+  document.getElementById('scene-bg').className = 'bg-img bg-phone-intro';
+  // 同步真实时间到规则手机状态栏
+  const updatePhoneTime = () => {
+    const el = document.getElementById('rms-time');
+    if (!el) return;
+    const d = new Date();
+    el.textContent = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+  };
+  updatePhoneTime();
+  setInterval(updatePhoneTime, 30000);
+  Scenes.title.enter();
+}
+
+async function restartToBeginning() {
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '0';
+  overlay.style.zIndex = '999999';
+  overlay.style.background = 'url("images/it smell you.webp") center/contain no-repeat';
+  overlay.style.backgroundColor = '#000';
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity 0.05s ease-out';
+  overlay.style.pointerEvents = 'none';
+  document.body.appendChild(overlay);
+
+  overlay.offsetHeight;
+  overlay.style.opacity = '1';
+
+  try { Audio.alert(); } catch(e) {}
+  try { Audio.heartbeat(2); } catch(e) {}
+
+  await new Promise(r => setTimeout(r, 1200));
+
+  const failScreen = document.getElementById('fail-screen');
+  if (failScreen) failScreen.style.display = 'none';
+  const endScreen = document.getElementById('end-screen');
+  if (endScreen) endScreen.style.display = 'none';
+
+  resetGameProgress();
+  State.isRestart = true;
+  Notebook.reset();
+  SceneManager.showHud(false);
+  SceneManager.go('title', null, { skipTransition: true });
+
+  overlay.style.transition = 'opacity 3.5s ease-in-out';
+  overlay.style.opacity = '0';
+
+  await new Promise(r => setTimeout(r, 3600));
+  overlay.remove();
+}
+
+// Start when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+<script>
+const bgm = document.getElementById('bgm');
+const jumpscareAudio = document.getElementById('jumpscare');
+bgm.volume = 0.5; // 可以调整BGM音量大小 0-1
+jumpscareAudio.volume = 1; // 可以调整突脸音效音量大小 0-1
+
+// 监听首次用户交互自动播放
+function playBGM() {
+  bgm.play().catch(() => {
+    // 如果播放失败，等待下一次用户交互
+    document.addEventListener('click', playBGM, { once: true });
+    document.addEventListener('touchstart', playBGM, { once: true });
+  });
+}
+playBGM();
+
+// 播放突脸音效
+function playJumpscare() {
+  jumpscareAudio.currentTime = 0; // 每次播放从头开始
+  jumpscareAudio.play().catch(() => {
+    // 处理播放失败情况
+    document.addEventListener('click', () => jumpscareAudio.play(), { once: true });
+  });
+}
+</script>
+</body>
+</html>
